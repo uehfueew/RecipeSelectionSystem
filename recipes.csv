@@ -1,0 +1,6 @@
+name,category,price,time_minutes,ingredients,steps,calories,difficulty
+Chicken Salad,main,5.5,15,chicken;lettuce;tomato;olive oil;lemon,Chop ingredients;Mix;Serve,350,Easy
+Pancakes,dessert,3.0,20,flour;milk;egg;sugar,Mix;Fry;Serve,450,Medium
+Tomato Soup,soup,2.5,25,tomato;onion;garlic;water;salt,Boil;Blend;Serve,200,Easy
+Grilled Cheese,starter,2.0,10,bread;cheese;butter,Assemble;Grill;Serve,400,Easy
+Stir Fry Chicken,main,6.0,18,chicken;soy sauce;vegetables;garlic,Stir fry;Serve,500,Medium
