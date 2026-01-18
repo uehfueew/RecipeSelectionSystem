@@ -57,8 +57,13 @@ def eval_expr(expr: str, env: Dict[str, bool]) -> bool:
     except SyntaxError:
         raise LogicEvalError("Invalid expression syntax")
     # validate AST
+    invalid_nodes = [ast.BinOp, ast.Compare, ast.Attribute, ast.Subscript, ast.Assign]
+    for legacy in ("Num", "Str"):
+        legacy_type = getattr(ast, legacy, None)
+        if legacy_type:
+            invalid_nodes.append(legacy_type)
     for node in ast.walk(tree):
-        if isinstance(node, (ast.BinOp, ast.Compare, ast.Num, ast.Str, ast.Attribute, ast.Subscript, ast.Assign)):
+        if isinstance(node, tuple(invalid_nodes)):
             raise LogicEvalError("Only boolean expressions with variables, and/or/not, and parentheses are allowed")
     return bool(_eval_node(tree, env))
 
