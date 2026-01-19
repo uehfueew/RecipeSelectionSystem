@@ -1,36 +1,44 @@
-import csv
+import pandas as pd
 import os
 from typing import List, Callable, Optional
 from .recipe import Recipe
 
 class RecipeManager:
-    """Handles the collection of recipes, file I/O, and searching."""
+    """Handles the collection of recipes, file I/O, and searching using Pandas."""
     
     def __init__(self):
         self.recipes: List[Recipe] = []
 
     def load_csv(self, path: str):
-        """Loads recipes from a CSV file with basic error handling."""
+        """Loads recipes from a CSV file using Pandas for data handling."""
         if not os.path.exists(path):
             return
             
-        with open(path, newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            self.recipes = [Recipe.from_dict(row) for row in reader]
+        try:
+            # Use Pandas to read the CSV
+            df = pd.read_csv(path)
+            # Ensure any NaN values are handled (converted to empty strings)
+            df = df.fillna("")
+            # Convert DataFrame to a list of dictionaries and then to Recipe objects
+            records = df.to_dict('records')
+            self.recipes = [Recipe.from_dict(row) for row in records]
+        except Exception as e:
+            print(f"Error loading CSV with Pandas: {e}")
 
     def save_csv(self, path: str):
-        """Saves current recipes to CSV, maintaining format integrity."""
+        """Saves current recipes to CSV using Pandas DataFrame functionality."""
         if not self.recipes:
             return
             
-        fieldnames = ["name", "category", "price", "time_minutes", 
-                      "ingredients", "steps", "calories", "difficulty"]
-        
-        with open(path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            for r in self.recipes:
-                writer.writerow(r.to_dict())
+        try:
+            # Convert list of Recipe objects to a list of dictionaries
+            data = [r.to_dict() for r in self.recipes]
+            # Create a Pandas DataFrame
+            df = pd.DataFrame(data)
+            # Save to CSV using Pandas
+            df.to_csv(path, index=False, encoding='utf-8')
+        except Exception as e:
+            print(f"Error saving CSV with Pandas: {e}")
 
     def add_recipe(self, recipe: Recipe):
         self.recipes.append(recipe)
