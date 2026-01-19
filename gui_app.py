@@ -12,16 +12,167 @@ from PyQt6.QtWidgets import (
     QPushButton, QLabel, QLineEdit, QComboBox, QTableWidget, QTableWidgetItem,
     QTextEdit, QSpinBox, QDoubleSpinBox, QCheckBox, QMessageBox, QDialog,
     QFormLayout, QDialogButtonBox, QHeaderView, QListWidget, QListWidgetItem,
-    QSplitter, QGroupBox, QGridLayout
+    QSplitter, QGroupBox, QGridLayout, QStackedWidget, QFrame, QGraphicsDropShadowEffect
 )
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor, QFont, QIcon
+from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtGui import QColor, QFont, QIcon, QPixmap, QLinearGradient, QPalette
 
 from recipe_system.manager import RecipeManager
 from recipe_system.recipe import Recipe
 from recipe_system.sorting import BubbleSort, MergeSort
 from recipe_system.logic import eval_expr, truth_table, LogicEvalError
 import os
+
+# Premium Modern "Chef's Kitchen" theme
+GLOBAL_STYLE = """
+QMainWindow {
+    background-color: #ffffff;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    background-color: #2d3436;
+    min-width: 220px;
+    max-width: 220px;
+    border-right: 1px solid #dfe6e9;
+}
+
+#sidebar_title {
+    color: #fab1a0;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 25px 15px;
+    border-bottom: 1px solid #3d4548;
+    margin-bottom: 10px;
+}
+
+QPushButton.nav_btn {
+    background-color: transparent;
+    color: #b2bec3;
+    text-align: left;
+    padding: 12px 20px;
+    border-radius: 0px;
+    font-size: 14px;
+    font-weight: 500;
+    border-left: 4px solid transparent;
+}
+
+QPushButton.nav_btn:hover {
+    background-color: #3d4548;
+    color: white;
+}
+
+QPushButton.nav_btn[active="true"] {
+    background-color: #3d4548;
+    color: #fab1a0;
+    border-left: 4px solid #fab1a0;
+}
+
+/* Main Content Styling */
+#content_area {
+    background-color: #f9f9f9;
+}
+
+QGroupBox {
+    background-color: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #2d3436;
+    padding-top: 25px;
+}
+
+QLabel#title_label {
+    color: #2d3436;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+/* Table Styling */
+QTableWidget {
+    background-color: white;
+    border: none;
+    gridline-color: #f1f2f6;
+    border-radius: 8px;
+    selection-background-color: #fff4f2;
+    selection-color: #e17055;
+    alternate-background-color: #fafafa;
+}
+
+QHeaderView::section {
+    background-color: white;
+    padding: 12px;
+    border: none;
+    border-bottom: 2px solid #f1f2f6;
+    font-weight: bold;
+    color: #636e72;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+/* Action Buttons */
+QPushButton.primary_btn {
+    background-color: #e17055;
+    color: white;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+QPushButton.primary_btn:hover {
+    background-color: #d35400;
+}
+
+QPushButton.secondary_btn {
+    background-color: #dfe6e9;
+    color: #2d3436;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+QPushButton.secondary_btn:hover {
+    background-color: #b2bec3;
+}
+
+QPushButton#delete_btn {
+    background-color: #ff7675;
+}
+
+/* Inputs */
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit {
+    border: 2px solid #dfe6e9;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: white;
+    color: #2d3436;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border: 2px solid #fab1a0;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    border: none;
+    background: transparent;
+    width: 8px;
+}
+
+QScrollBar::handle:vertical {
+    background: #dfe6e9;
+    border-radius: 4px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #b2bec3;
+}
+"""
 
 
 class RecipeTableWidget(QTableWidget):
@@ -60,9 +211,14 @@ class AddRecipeDialog(QDialog):
             self.load_recipe()
 
     def init_ui(self):
-        self.setWindowTitle("Add/Edit Recipe")
-        self.setGeometry(100, 100, 400, 300)
-        layout = QFormLayout()
+        self.setWindowTitle("Recipe Details")
+        self.setMinimumWidth(500)
+        
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        
+        form_layout = QFormLayout()
+        form_layout.setSpacing(10)
 
         self.name_input = QLineEdit()
         self.category_input = QLineEdit()
@@ -71,27 +227,35 @@ class AddRecipeDialog(QDialog):
         self.time_input = QSpinBox()
         self.time_input.setRange(0, 1000)
         self.ingredients_input = QTextEdit()
+        self.ingredients_input.setMinimumHeight(80)
         self.steps_input = QTextEdit()
+        self.steps_input.setMinimumHeight(80)
         self.calories_input = QSpinBox()
         self.calories_input.setRange(0, 5000)
         self.difficulty_input = QComboBox()
         self.difficulty_input.addItems(["Easy", "Medium", "Hard"])
 
-        layout.addRow("Name:", self.name_input)
-        layout.addRow("Category:", self.category_input)
-        layout.addRow("Price:", self.price_input)
-        layout.addRow("Time (minutes):", self.time_input)
-        layout.addRow("Ingredients (semicolon-separated):", self.ingredients_input)
-        layout.addRow("Steps (semicolon-separated):", self.steps_input)
-        layout.addRow("Calories:", self.calories_input)
-        layout.addRow("Difficulty:", self.difficulty_input)
+        form_layout.addRow("Name:", self.name_input)
+        form_layout.addRow("Category:", self.category_input)
+        form_layout.addRow("Price ($):", self.price_input)
+        form_layout.addRow("Time (min):", self.time_input)
+        form_layout.addRow("Ingredients (;):", self.ingredients_input)
+        form_layout.addRow("Steps (;):", self.steps_input)
+        form_layout.addRow("Calories (kcal):", self.calories_input)
+        form_layout.addRow("Difficulty:", self.difficulty_input)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        
+        main_layout.addLayout(form_layout)
+        main_layout.addSpacing(10)
+        main_layout.addWidget(buttons)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
+        
+        # Apply style to dialog as well
+        self.setStyleSheet(GLOBAL_STYLE)
 
     def load_recipe(self):
         """Load recipe data into form"""
@@ -131,46 +295,122 @@ class RecipeGUI(QMainWindow):
         self.load_data()
 
     def init_ui(self):
-        """Initialize UI components"""
-        self.setWindowTitle("Recipe Selection System - GUI")
-        self.setGeometry(50, 50, 1200, 700)
+        """Initialize modern sidebar-based UI"""
+        self.setWindowTitle("Chef's Selection System")
+        self.setGeometry(50, 50, 1300, 800)
 
-        # Create tab widget
-        tabs = QTabWidget()
-        tabs.addTab(self.create_browse_tab(), "Browse")
-        tabs.addTab(self.create_search_tab(), "Search")
-        tabs.addTab(self.create_sort_tab(), "Sort")
-        tabs.addTab(self.create_logic_tab(), "Logic")
-        tabs.addTab(self.create_manage_tab(), "Manage")
-        tabs.addTab(self.create_performance_tab(), "Performance")
+        # Main Layout
+        main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        self.setCentralWidget(tabs)
+        # Sidebar
+        self.sidebar = QFrame()
+        self.sidebar.setObjectName("sidebar")
+        sidebar_layout = QVBoxLayout()
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.setSpacing(5)
+
+        title = QLabel("🍳 CHEF'S APP")
+        title.setObjectName("sidebar_title")
+        sidebar_layout.addWidget(title)
+
+        self.nav_buttons = []
+        nav_items = [
+            ("🏠 Browse", 0),
+            ("🔍 Search", 1),
+            ("📊 Sort", 2),
+            ("🧠 Logic", 3),
+            ("📋 Manage", 4),
+            ("⚡ Performance", 5)
+        ]
+
+        for text, index in nav_items:
+            btn = QPushButton(text)
+            btn.setProperty("active", "false")
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(lambda checked, idx=index: self.change_page(idx))
+            btn.setObjectName("nav_btn")
+            btn.setMinimumHeight(50)
+            btn.setCheckable(True) # Just for styling convenience
+            sidebar_layout.addWidget(btn)
+            self.nav_buttons.append(btn)
+
+        sidebar_layout.addStretch()
+        
+        # User feedback status in sidebar
+        self.status_label = QLabel("Ready")
+        self.status_label.setStyleSheet("color: #636e72; padding: 20px; font-size: 11px;")
+        sidebar_layout.addWidget(self.status_label)
+        
+        self.sidebar.setLayout(sidebar_layout)
+        main_layout.addWidget(self.sidebar)
+
+        # Content Area
+        self.content_stack = QStackedWidget()
+        self.content_stack.setObjectName("content_area")
+        
+        self.content_stack.addWidget(self.create_browse_tab())
+        self.content_stack.addWidget(self.create_search_tab())
+        self.content_stack.addWidget(self.create_sort_tab())
+        self.content_stack.addWidget(self.create_logic_tab())
+        self.content_stack.addWidget(self.create_manage_tab())
+        self.content_stack.addWidget(self.create_performance_tab())
+
+        main_layout.addWidget(self.content_stack)
+
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
+        
+        # Set first page active
+        self.change_page(0)
+
+    def change_page(self, index):
+        """Switch between pages and update sidebar styling"""
+        self.content_stack.setCurrentIndex(index)
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setProperty("active", str(i == index).lower())
+            btn.style().unpolish(btn)
+            btn.style().polish(btn)
 
     def create_browse_tab(self):
         """Create recipe browsing tab"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(10)
 
         # Title
-        title = QLabel("All Recipes")
-        title_font = title.font()
-        title_font.setPointSize(14)
-        title_font.setBold(True)
-        title.setFont(title_font)
+        title = QLabel("Menu Exploration")
+        title.setObjectName("title_label")
         layout.addWidget(title)
+        
+        subtitle = QLabel("Select a recipe below to view detailed cooking instructions and nutrition facts.")
+        subtitle.setStyleSheet("color: #636e72; margin-bottom: 20px; font-size: 13px;")
+        layout.addWidget(subtitle)
 
         # Recipe table
         self.recipe_table = RecipeTableWidget()
         layout.addWidget(self.recipe_table)
 
         # Detail view
-        detail_layout = QHBoxLayout()
-        detail_layout.addWidget(QLabel("Recipe Details:"))
+        detail_group = QGroupBox("Recipe Spotlight")
+        detail_layout = QVBoxLayout()
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
-        self.detail_text.setMaximumHeight(150)
+        self.detail_text.setMinimumHeight(350)
+        self.detail_text.setFrameStyle(0)
         detail_layout.addWidget(self.detail_text)
-        layout.addLayout(detail_layout)
+        detail_group.setLayout(detail_layout)
+        
+        # Splitter for adjustable table/detail ratio
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(self.recipe_table)
+        splitter.addWidget(detail_group)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
+        layout.addWidget(splitter)
 
         # Connect selection
         self.recipe_table.selectionModel().selectionChanged.connect(self.on_recipe_selected)
@@ -182,44 +422,64 @@ class RecipeGUI(QMainWindow):
         """Create search tab"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
 
         # Title
-        title = QLabel("Search Recipes")
-        title_font = title.font()
-        title_font.setPointSize(14)
-        title_font.setBold(True)
-        title.setFont(title_font)
+        title = QLabel("Find Your Perfect Dish")
+        title.setObjectName("title_label")
         layout.addWidget(title)
 
         # Search options
+        search_card = QGroupBox("Search Options")
         search_layout = QGridLayout()
-        search_layout.addWidget(QLabel("Search by Name:"), 0, 0)
+        search_layout.setContentsMargins(15, 20, 15, 15)
+        search_layout.setSpacing(10)
+        
+        search_layout.addWidget(QLabel("By Name:"), 0, 0)
         self.search_name_input = QLineEdit()
+        self.search_name_input.setPlaceholderText("Enter dish name...")
         search_layout.addWidget(self.search_name_input, 0, 1)
-        search_by_name_btn = QPushButton("Search")
+        search_by_name_btn = QPushButton("Search Name")
+        search_by_name_btn.setObjectName("search_btn")
+        search_by_name_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        search_by_name_btn.setFixedWidth(150)
+        search_by_name_btn.setStyleSheet("background-color: #e17055; color: white; border-radius: 6px; padding: 8px; font-weight: bold;")
         search_by_name_btn.clicked.connect(self.search_by_name)
         search_layout.addWidget(search_by_name_btn, 0, 2)
 
-        search_layout.addWidget(QLabel("Search by Category:"), 1, 0)
+        search_layout.addWidget(QLabel("By Category:"), 1, 0)
         self.search_category_input = QLineEdit()
+        self.search_category_input.setPlaceholderText("e.g., starter, main, soup...")
         search_layout.addWidget(self.search_category_input, 1, 1)
-        search_by_cat_btn = QPushButton("Search")
+        search_by_cat_btn = QPushButton("Search Category")
+        search_by_cat_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        search_by_cat_btn.setFixedWidth(150)
+        search_by_cat_btn.setStyleSheet("background-color: #e17055; color: white; border-radius: 6px; padding: 8px; font-weight: bold;")
         search_by_cat_btn.clicked.connect(self.search_by_category)
         search_layout.addWidget(search_by_cat_btn, 1, 2)
 
-        search_layout.addWidget(QLabel("Search by Ingredient:"), 2, 0)
+        search_layout.addWidget(QLabel("By Ingredient:"), 2, 0)
         self.search_ingredient_input = QLineEdit()
+        self.search_ingredient_input.setPlaceholderText("e.g., chicken, tomato...")
         search_layout.addWidget(self.search_ingredient_input, 2, 1)
-        search_by_ing_btn = QPushButton("Search")
+        search_by_ing_btn = QPushButton("Search Ingredient")
+        search_by_ing_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        search_by_ing_btn.setFixedWidth(150)
+        search_by_ing_btn.setStyleSheet("background-color: #e17055; color: white; border-radius: 6px; padding: 8px; font-weight: bold;")
         search_by_ing_btn.clicked.connect(self.search_by_ingredient)
         search_layout.addWidget(search_by_ing_btn, 2, 2)
 
-        layout.addLayout(search_layout)
+        search_card.setLayout(search_layout)
+        layout.addWidget(search_card)
 
         # Results
-        layout.addWidget(QLabel("Results:"))
+        results_group = QGroupBox("Search Results")
+        results_layout = QVBoxLayout()
         self.search_results_table = RecipeTableWidget()
-        layout.addWidget(self.search_results_table)
+        results_layout.addWidget(self.search_results_table)
+        results_group.setLayout(results_layout)
+        layout.addWidget(results_group)
 
         widget.setLayout(layout)
         return widget
@@ -228,17 +488,20 @@ class RecipeGUI(QMainWindow):
         """Create sorting tab"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
 
         # Title
-        title = QLabel("Sort Recipes")
-        title_font = title.font()
-        title_font.setPointSize(14)
-        title_font.setBold(True)
-        title.setFont(title_font)
+        title = QLabel("Organize Recipes")
+        title.setObjectName("title_label")
         layout.addWidget(title)
 
         # Sort options
+        sort_card = QGroupBox("Sorting Configuration")
         sort_layout = QGridLayout()
+        sort_layout.setContentsMargins(15, 20, 15, 15)
+        sort_layout.setSpacing(12)
+
         sort_layout.addWidget(QLabel("Algorithm:"), 0, 0)
         self.sort_algo = QComboBox()
         self.sort_algo.addItems(["BubbleSort (O(n²))", "MergeSort (O(n log n))"])
@@ -259,16 +522,22 @@ class RecipeGUI(QMainWindow):
         self.sort_logic_input.setPlaceholderText("e.g., (cheap and quick)")
         sort_layout.addWidget(self.sort_logic_input, 3, 1)
 
-        sort_btn = QPushButton("Sort")
+        sort_btn = QPushButton("Apply Sorting")
+        sort_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        sort_btn.setStyleSheet("background-color: #fab1a0; color: #d35400; border-radius: 8px; padding: 12px; font-weight: bold; border: 1px solid #e17055;")
         sort_btn.clicked.connect(self.apply_sort)
         sort_layout.addWidget(sort_btn, 4, 1)
 
-        layout.addLayout(sort_layout)
+        sort_card.setLayout(sort_layout)
+        layout.addWidget(sort_card)
 
         # Results
-        layout.addWidget(QLabel("Sorted Results:"))
+        results_group = QGroupBox("Sorted Results")
+        results_layout = QVBoxLayout()
         self.sort_results_table = RecipeTableWidget()
-        layout.addWidget(self.sort_results_table)
+        results_layout.addWidget(self.sort_results_table)
+        results_group.setLayout(results_layout)
+        layout.addWidget(results_group)
 
         widget.setLayout(layout)
         return widget
@@ -277,50 +546,64 @@ class RecipeGUI(QMainWindow):
         """Create logical analysis tab"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
 
         # Title
-        title = QLabel("Logical Analysis")
-        title_font = title.font()
-        title_font.setPointSize(14)
-        title_font.setBold(True)
-        title.setFont(title_font)
+        title = QLabel("Logical Filtering")
+        title.setObjectName("title_label")
         layout.addWidget(title)
 
         # Logic search
+        logic_card = QGroupBox("Recipe Logic Search")
         logic_layout = QVBoxLayout()
-        logic_layout.addWidget(QLabel("Logical Search (Variables: cheap, quick, healthy, contains_chicken):"))
+        logic_layout.setContentsMargins(15, 20, 15, 15)
+        logic_layout.setSpacing(10)
+        
+        logic_layout.addWidget(QLabel("Expression (Variables: cheap, quick, healthy, contains_chicken):"))
         self.logic_expr_input = QLineEdit()
         self.logic_expr_input.setPlaceholderText("e.g., (cheap or quick) and healthy")
         logic_layout.addWidget(self.logic_expr_input)
 
-        logic_btn = QPushButton("Search")
+        logic_btn = QPushButton("Filter Recipes")
         logic_btn.clicked.connect(self.logic_search)
         logic_layout.addWidget(logic_btn)
-
-        layout.addLayout(logic_layout)
+        logic_card.setLayout(logic_layout)
+        layout.addWidget(logic_card)
 
         # Results
-        layout.addWidget(QLabel("Matching Recipes:"))
+        results_group = QGroupBox("Filtered Recipes")
+        results_layout = QVBoxLayout()
         self.logic_results_table = RecipeTableWidget()
-        layout.addWidget(self.logic_results_table)
+        results_layout.addWidget(self.logic_results_table)
+        results_group.setLayout(results_layout)
+        layout.addWidget(results_group)
 
         # Truth table
-        layout.addWidget(QLabel("\nTruth Table Generator:"))
-        tt_layout = QHBoxLayout()
-        tt_layout.addWidget(QLabel("Expression:"))
+        tt_card = QGroupBox("Truth Table Generator")
+        tt_main_layout = QVBoxLayout()
+        tt_main_layout.setContentsMargins(15, 20, 15, 15)
+        tt_main_layout.setSpacing(10)
+        
+        tt_input_layout = QHBoxLayout()
+        tt_input_layout.addWidget(QLabel("Logic Expression:"))
         self.tt_expr_input = QLineEdit()
         self.tt_expr_input.setPlaceholderText("e.g., A and B")
-        tt_layout.addWidget(self.tt_expr_input)
+        tt_input_layout.addWidget(self.tt_expr_input)
         tt_btn = QPushButton("Generate")
         tt_btn.clicked.connect(self.generate_truth_table)
-        tt_layout.addWidget(tt_btn)
-        layout.addLayout(tt_layout)
+        tt_input_layout.addWidget(tt_btn)
+        tt_main_layout.addLayout(tt_input_layout)
 
         # Truth table display
         self.tt_display = QTextEdit()
         self.tt_display.setReadOnly(True)
         self.tt_display.setMaximumHeight(200)
-        layout.addWidget(self.tt_display)
+        self.tt_display.setFont(QFont("Consolas", 10))
+        tt_main_layout.addWidget(self.tt_display)
+        
+        tt_card.setLayout(tt_main_layout)
+        layout.addWidget(tt_card)
 
         widget.setLayout(layout)
         return widget
@@ -329,18 +612,19 @@ class RecipeGUI(QMainWindow):
         """Create recipe management tab"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
 
         # Title
-        title = QLabel("Manage Recipes")
-        title_font = title.font()
-        title_font.setPointSize(14)
-        title_font.setBold(True)
-        title.setFont(title_font)
+        title = QLabel("Recipe Inventory")
+        title.setObjectName("title_label")
         layout.addWidget(title)
 
         # Buttons
         btn_layout = QHBoxLayout()
-        add_btn = QPushButton("Add Recipe")
+        btn_layout.setSpacing(10)
+        
+        add_btn = QPushButton("Add New Recipe")
         add_btn.clicked.connect(self.add_recipe)
         btn_layout.addWidget(add_btn)
 
@@ -349,26 +633,31 @@ class RecipeGUI(QMainWindow):
         btn_layout.addWidget(edit_btn)
 
         delete_btn = QPushButton("Delete Selected")
+        delete_btn.setObjectName("delete_btn")
         delete_btn.clicked.connect(self.delete_recipe)
         btn_layout.addWidget(delete_btn)
 
-        export_btn = QPushButton("Export to CSV")
+        export_btn = QPushButton("Export CSV")
         export_btn.clicked.connect(self.export_csv)
         btn_layout.addWidget(export_btn)
 
-        reload_btn = QPushButton("Reload from CSV")
+        reload_btn = QPushButton("Reload All")
         reload_btn.clicked.connect(self.reload_csv)
         btn_layout.addWidget(reload_btn)
 
         layout.addLayout(btn_layout)
 
         # Recipe list
-        layout.addWidget(QLabel("Current Recipes:"))
+        manage_group = QGroupBox("Current Recipe Database")
+        manage_layout = QVBoxLayout()
         self.manage_table = RecipeTableWidget()
-        layout.addWidget(self.manage_table)
+        manage_layout.addWidget(self.manage_table)
+        manage_group.setLayout(manage_layout)
+        layout.addWidget(manage_group)
 
         # Status
-        self.status_label = QLabel("Ready")
+        self.status_label = QLabel("Database Ready")
+        self.status_label.setStyleSheet("color: #7f8c8d; font-style: italic;")
         layout.addWidget(self.status_label)
 
         widget.setLayout(layout)
@@ -378,51 +667,57 @@ class RecipeGUI(QMainWindow):
         """Create performance analysis tab"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
 
         # Title
-        title = QLabel("Performance Analysis")
-        title_font = title.font()
-        title_font.setPointSize(14)
-        title_font.setBold(True)
-        title.setFont(title_font)
+        title = QLabel("Efficiency Analysis")
+        title.setObjectName("title_label")
         layout.addWidget(title)
 
         # Info
+        info_card = QGroupBox("Algorithm Comparison")
+        info_layout = QVBoxLayout()
         info = QLabel(
-            "Algorithm Performance Comparison:\n\n"
-            "BubbleSort (Loop-based):\n"
-            "  • Time: O(n²) average case\n"
-            "  • Space: O(1)\n"
-            "  • Best for: Small datasets\n\n"
-            "MergeSort (Recursion-based):\n"
-            "  • Time: O(n log n) all cases\n"
-            "  • Space: O(n)\n"
-            "  • Best for: Large datasets"
+            "<b>BubbleSort (Loop-based):</b><br>"
+            "&nbsp;&nbsp;• Time: O(n²) average case<br>"
+            "&nbsp;&nbsp;• Best for: Small datasets<br><br>"
+            "<b>MergeSort (Recursion-based):</b><br>"
+            "&nbsp;&nbsp;• Time: O(n log n) all cases<br>"
+            "&nbsp;&nbsp;• Best for: Large datasets"
         )
-        info_font = info.font()
-        info_font.setPointSize(10)
-        info.setFont(info_font)
-        layout.addWidget(info)
+        info_layout.addWidget(info)
+        info_card.setLayout(info_layout)
+        layout.addWidget(info_card)
 
         # Test parameters
+        test_card = QGroupBox("Benchmarking Tool")
         test_layout = QGridLayout()
-        test_layout.addWidget(QLabel("Dataset Size (multiplier):"), 0, 0)
+        test_layout.setContentsMargins(15, 20, 15, 15)
+        test_layout.setSpacing(10)
+        
+        test_layout.addWidget(QLabel("Dataset Size Factor:"), 0, 0)
         self.perf_size = QSpinBox()
         self.perf_size.setRange(1, 10)
         self.perf_size.setValue(3)
         test_layout.addWidget(self.perf_size, 0, 1)
 
-        test_btn = QPushButton("Run Performance Test")
+        test_btn = QPushButton("Run Comparison Test")
         test_btn.clicked.connect(self.run_performance_test)
         test_layout.addWidget(test_btn, 1, 1)
 
-        layout.addLayout(test_layout)
+        test_card.setLayout(test_layout)
+        layout.addWidget(test_card)
 
         # Results
-        layout.addWidget(QLabel("Results:"))
+        results_group = QGroupBox("Performance Data")
+        results_layout = QVBoxLayout()
         self.perf_results = QTextEdit()
         self.perf_results.setReadOnly(True)
-        layout.addWidget(self.perf_results)
+        self.perf_results.setFont(QFont("Consolas", 10))
+        results_layout.addWidget(self.perf_results)
+        results_group.setLayout(results_layout)
+        layout.addWidget(results_group)
 
         widget.setLayout(layout)
         return widget
@@ -450,18 +745,39 @@ class RecipeGUI(QMainWindow):
         row = self.recipe_table.currentRow()
         if row >= 0 and row < len(self.current_recipes):
             recipe = self.current_recipes[row]
-            details = (
-                f"<b>{recipe.name}</b><br>"
-                f"Category: {recipe.category}<br>"
-                f"Price: ${recipe.price:.2f}<br>"
-                f"Time: {recipe.time_minutes} minutes<br>"
-                f"Calories: {recipe.calories}<br>"
-                f"Difficulty: {recipe.difficulty}<br><br>"
-                f"<b>Ingredients:</b><br>"
-                f"{', '.join(recipe.ingredients)}<br><br>"
-                f"<b>Steps:</b><br>"
-                f"{', '.join(recipe.steps)}"
-            )
+            # Advanced HTML with dynamic coloring for difficulty
+            diff_color = "#2ecc71" if recipe.difficulty == "Easy" else ("#f1c40f" if recipe.difficulty == "Medium" else "#e74c3c")
+            details = f"""
+                <div style='font-family: "Segoe UI", sans-serif; background: #fff; border-radius: 12px;'>
+                    <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
+                        <h1 style='color: #2d3436; margin: 0; font-size: 24px;'>{recipe.name}</h1>
+                        <span style='background: {diff_color}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 12px;'>{recipe.difficulty.upper()}</span>
+                    </div>
+                    <p style='color: #636e72; margin-top: 5px; font-weight: 500;'>{recipe.category} • ${recipe.price:.2f}</p>
+                    <div style='display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0;'>
+                        <div style='background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;'>
+                            <div style='color: #e17055; font-size: 20px; font-weight: bold;'>{recipe.time_minutes}</div>
+                            <div style='color: #b2bec3; font-size: 11px;'>MINUTES</div>
+                        </div>
+                        <div style='background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;'>
+                            <div style='color: #e17055; font-size: 20px; font-weight: bold;'>{recipe.calories}</div>
+                            <div style='color: #b2bec3; font-size: 11px;'>CALORIES</div>
+                        </div>
+                        <div style='background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;'>
+                            <div style='color: #e17055; font-size: 20px; font-weight: bold;'>{len(recipe.ingredients)}</div>
+                            <div style='color: #b2bec3; font-size: 11px;'>INGREDIENTS</div>
+                        </div>
+                    </div>
+                    <div style='margin-bottom: 20px;'>
+                        <h3 style='color: #2d3436; border-bottom: 2px solid #fab1a0; display: inline-block; padding-bottom: 3px; font-size: 14px;'>Required Ingredients</h3>
+                        <p style='color: #636e72; line-height: 1.6; font-size: 13px;'>{", ".join(recipe.ingredients)}</p>
+                    </div>
+                    <div>
+                        <h3 style='color: #2d3436; border-bottom: 2px solid #fab1a0; display: inline-block; padding-bottom: 3px; font-size: 14px;'>How to Cook</h3>
+                        <p style='color: #636e72; line-height: 1.6; font-size: 13px;'>{", ".join(recipe.steps)}</p>
+                    </div>
+                </div>
+            """
             self.detail_text.setHtml(details)
 
     def search_by_name(self):
@@ -516,6 +832,7 @@ class RecipeGUI(QMainWindow):
                     'cheap': r.price < 4.0,
                     'quick': r.time_minutes <= 15,
                     'healthy': r.calories < 400,
+                    'contains_chicken': any('chicken' in i.lower() for i in r.ingredients),
                 }
                 try:
                     secondary = 0 if eval_expr(logic_expr, env) else 1
@@ -694,6 +1011,12 @@ class RecipeGUI(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyleSheet(GLOBAL_STYLE)
+    
+    # Set a default font for the whole app
+    font = QFont("Segoe UI", 10)
+    app.setFont(font)
+    
     gui = RecipeGUI()
     gui.show()
     sys.exit(app.exec())

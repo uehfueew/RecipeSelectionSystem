@@ -1,64 +1,50 @@
 from abc import ABC, abstractmethod
 from typing import Callable, List, Optional, Sequence, TypeVar
 
-T = TypeVar("T")
-
+T = TypeVar('T')
 
 class SortingAlgorithm(ABC):
-    """Abstract base for sorting strategies."""
-
     @abstractmethod
-    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None) -> List[T]:
-        """Return a sorted copy of *items* using the provided key function."""
+    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None, reverse: bool = False) -> List[T]:
         raise NotImplementedError
 
-
 class BubbleSort(SortingAlgorithm):
-    """Loop-based, stable bubble sort implementation."""
-
-    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None) -> List[T]:
+    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None, reverse: bool = False) -> List[T]:
         key = key_func or (lambda x: x)
         arr = list(items)
         n = len(arr)
-        if n < 2:
-            return arr
+        if n < 2: return arr
         for i in range(n):
             swapped = False
             for j in range(0, n - i - 1):
-                if key(arr[j]) > key(arr[j + 1]):
+                should_swap = key(arr[j]) < key(arr[j + 1]) if reverse else key(arr[j]) > key(arr[j + 1])
+                if should_swap:
                     arr[j], arr[j + 1] = arr[j + 1], arr[j]
                     swapped = True
-            if not swapped:
-                break
+            if not swapped: break
         return arr
 
-
 class MergeSort(SortingAlgorithm):
-    """Recursive, stable merge sort implementation."""
-
-    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None) -> List[T]:
+    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None, reverse: bool = False) -> List[T]:
         key = key_func or (lambda x: x)
         arr = list(items)
-        if len(arr) < 2:
-            return arr
+        if len(arr) < 2: return arr
         mid = len(arr) // 2
-        left = self.sort(arr[:mid], key)
-        right = self.sort(arr[mid:], key)
-        return self._merge(left, right, key)
+        left = self.sort(arr[:mid], key, reverse)
+        right = self.sort(arr[mid:], key, reverse)
+        return self._merge(left, right, key, reverse)
 
-    def _merge(self, left: List[T], right: List[T], key: Callable[[T], object]) -> List[T]:
+    def _merge(self, left: List[T], right: List[T], key: Callable[[T], object], reverse: bool) -> List[T]:
         merged: List[T] = []
         i = j = 0
         while i < len(left) and j < len(right):
-            if key(left[i]) <= key(right[j]):
+            is_less_or_equal = key(left[i]) >= key(right[j]) if reverse else key(left[i]) <= key(right[j])
+            if is_less_or_equal:
                 merged.append(left[i])
                 i += 1
             else:
                 merged.append(right[j])
                 j += 1
-        if i < len(left):
-            merged.extend(left[i:])
-        if j < len(right):
-            merged.extend(right[j:])
+        merged.extend(left[i:])
+        merged.extend(right[j:])
         return merged
-
