@@ -13,41 +13,245 @@ This system demonstrates:
 
 ## Project Structure
 
-\\\
+```
 RecipeSelectionSystem/
- main.py                      # Main console application
- test_demo.py                 # Comprehensive demo and tests
- recipes.csv                  # Sample recipe data
- recipe_system/
-     __init__.py              # Package initialization
-     recipe.py                # Recipe class definition
-     manager.py               # RecipeManager class (load/save/search)
-     sorting.py               # Abstract SortingAlgorithm + implementations
-     logic.py                 # Logical expression evaluator & truth tables
-\\\
+├── main.py                          # ⭐ Entry point - Console-based CLI application
+├── gui_app.py                       # 🎨 PyQt6 graphical user interface
+├── GUI_VISUAL_GUIDE.py              # 📖 Documentation for GUI features
+├── test_demo.py                     # ✅ Unit tests and test cases (7 tests)
+├── recipes.csv                      # 📊 Sample recipe data (5 recipes)
+│
+├── recipe_system/                   # 📦 Core system package
+│   ├── __init__.py                  # Package initialization & imports
+│   ├── recipe.py                    # 📋 Recipe class (data structure)
+│   │   └── Stores: name, category, price, time, ingredients, steps, calories, difficulty
+│   │   └── Methods: to_dict(), from_dict(), __str__()
+│   │
+│   ├── manager.py                   # 🔧 RecipeManager class (main controller)
+│   │   └── Load/Save recipes from/to CSV
+│   │   └── Search by: name, category, ingredient
+│   │   └── Add, delete, and manage recipes
+│   │
+│   ├── sorting.py                   # 🔀 Sorting algorithms
+│   │   ├── SortingAlgorithm (abstract base class)
+│   │   ├── BubbleSort (O(n²) - loop-based)
+│   │   └── MergeSort (O(n log n) - recursion-based)
+│   │
+│   └── logic.py                     # 🧠 Boolean logic evaluator
+│       ├── eval_expr() - Evaluate boolean expressions safely
+│       ├── truth_table() - Generate truth tables
+│       ├── parse_vars() - Extract variables from expressions
+│       └── Supports: AND, OR, NOT operators & parentheses
+│
+├── README.md                        # 📚 Project documentation
+├── COMMENTS_GUIDE.md                # 🎓 Beginner-friendly learning guide
+└── COMMENTS_COMPLETE.txt            # ✨ Summary of all comments added
+```
+
+### 📁 File Descriptions
+
+**Root Level Files**
+| File | Purpose | Type |
+|------|---------|------|
+| `main.py` | Interactive menu-driven CLI | Executable |
+| `gui_app.py` | PyQt6 graphical interface | Executable |
+| `test_demo.py` | 7 automated unit tests | Test Suite |
+| `recipes.csv` | 5 sample recipes | Data |
+
+**Core Package: `recipe_system/`**
+| Module | Classes/Functions | Purpose |
+|--------|-------------------|---------|
+| `recipe.py` | `Recipe` class | Data structure for single recipe |
+| `manager.py` | `RecipeManager` class | Collection management & search |
+| `sorting.py` | `BubbleSort`, `MergeSort` | Algorithm implementations |
+| `logic.py` | `eval_expr()`, `truth_table()` | Boolean expression handling |\
 
 ## Key Features
 
-### 1. Class Design (OOP)
+### 1. 📋 Class Design (OOP)
 
-**Recipe Class**
-- Stores: name, category, price, time_minutes, ingredients, steps, calories, difficulty
-- Methods: to_dict(), from_dict(), __str__()
+#### Recipe Class (`recipe_system/recipe.py`)
+The fundamental data structure representing a single recipe.
 
-**RecipeManager Class**
-- load_csv(path) / save_csv(path)
-- add_recipe(), delete_recipe(), find_by_name()
-- search_by_category(), search_by_ingredient(), search_custom()
+**Attributes:**
+- `name` - Recipe name (string)
+- `category` - Type of dish (main, dessert, soup, starter)
+- `price` - Cost in dollars (float, auto-validated ≥ 0)
+- `time_minutes` - Cooking time (int, auto-validated ≥ 0)
+- `ingredients` - List of items needed (list of strings)
+- `steps` - Cooking instructions (list of strings)
+- `calories` - Nutritional info (int, auto-validated ≥ 0)
+- `difficulty` - Skill level (Easy, Medium, Hard)
 
-**SortingAlgorithm (Abstract)**
-- BubbleSort: O(n) loop-based sorting
-- MergeSort: O(n log n) recursion-based sorting
+**Methods:**
+- `to_dict()` - Convert to dictionary for CSV export
+- `from_dict(d)` - Static method to create Recipe from dictionary (CSV import)
+- `__str__()` - Human-readable representation
 
-### 2. Logical Expression Evaluation
+---
 
-Supports complex boolean expressions:
-- Variables: cheap, quick, healthy, contains_chicken
-- Operators: and, or, not (, , )
+#### RecipeManager Class (`recipe_system/manager.py`)
+Central controller managing the collection of recipes.
+
+**Data Management:**
+- `load_csv(path)` - Load recipes from CSV file using Pandas
+- `save_csv(path)` - Save recipes to CSV file using Pandas
+- `add_recipe(recipe)` - Add new recipe to collection
+- `delete_recipe(name)` - Remove recipe by name (case-insensitive)
+
+**Search Methods:**
+- `find_by_name(name)` - Exact name lookup (case-insensitive)
+- `search_by_name(name)` - Partial name search
+- `search_by_category(category)` - Filter by category
+- `search_by_ingredient(ingredient)` - Find recipes containing ingredient
+- `search_custom(predicate)` - Advanced filtering with custom logic
+
+---
+
+#### Sorting Algorithm Classes (`recipe_system/sorting.py`)
+
+**SortingAlgorithm (Abstract Base Class)**
+- Defines interface all sorting algorithms must implement
+- Ensures consistent method signatures
+
+**BubbleSort Implementation**
+- Time Complexity: O(n²) best/average/worst
+- Space Complexity: O(1)
+- Algorithm: Compare adjacent elements, swap if needed, repeat
+- Best for: Learning and small datasets
+- Code type: Loop-based iterative approach
+
+**MergeSort Implementation**
+- Time Complexity: O(n log n) all cases (guaranteed)
+- Space Complexity: O(n)
+- Algorithm: Divide list in half recursively, merge sorted halves
+- Best for: Large datasets (n > 1000)
+- Code type: Recursion-based divide-and-conquer
+
+---
+
+#### Logic Evaluator (`recipe_system/logic.py`)
+Safe evaluation of boolean expressions for complex filtering.
+
+**Functions:**
+- `eval_expr(expr, env)` - Evaluate expression with variable values
+- `truth_table(expr)` - Generate all True/False combinations (2^n rows)
+- `parse_vars(expr)` - Extract variable names from expression
+
+**Supported Operations:**
+- `AND` / `and` / `∧` - Both values must be True
+- `OR` / `or` / `∨` - At least one value must be True
+- `NOT` / `not` / `¬` - Negate the value
+- Parentheses for grouping expressions
+
+### 2. 🎯 Application Entry Points
+
+**CLI Version (`main.py`)**
+- 13 interactive menu options
+- Text-based user interface
+- Supports all features: search, sort, logical filtering
+- Run: `python main.py`
+
+**GUI Version (`gui_app.py`)**
+- 6-tab PyQt6 interface
+- Visual recipe browser
+- Dark theme "Cyber Chef" styling
+- Advanced search and sorting
+- Run: `python gui_app.py`
+
+---
+
+## 🏗️ Architecture & Component Interaction
+
+### Data Flow Diagram
+
+```
+CSV File (recipes.csv)
+    ↓
+RecipeManager.load_csv() → [Recipe objects in memory]
+    ↓
+User Interface (CLI or GUI)
+    ├→ Display recipes
+    ├→ Search recipes
+    │   ├→ Search by name/category/ingredient (manager.py)
+    │   └→ Logical search using eval_expr() (logic.py)
+    ├→ Sort recipes
+    │   ├→ BubbleSort or MergeSort (sorting.py)
+    │   └→ Primary + secondary sort keys
+    └→ Add/Edit/Delete recipes
+    ↓
+RecipeManager.save_csv() → Updated CSV File
+```
+
+### Module Dependencies
+
+```
+main.py / gui_app.py (User Interface)
+    ↓
+recipe_system.manager (RecipeManager)
+    ├→ recipe_system.recipe (Recipe class)
+    ├→ recipe_system.sorting (BubbleSort, MergeSort)
+    ├→ recipe_system.logic (eval_expr, truth_table)
+    └→ pandas (CSV handling)
+```
+
+### How Components Work Together
+
+**Example: Search for cheap & quick meals**
+1. User enters: `(cheap or quick) and healthy`
+2. `main.py` → calls `manager.search_custom(predicate)`
+3. For each recipe, create environment dict with:
+   - `cheap` = price < 4.0
+   - `quick` = time ≤ 15 minutes
+   - `healthy` = calories < 400
+4. `logic.eval_expr()` → evaluates expression for each recipe
+5. Returns matching recipes
+6. Display results to user
+
+**Example: Sort by price, then by health**
+1. User selects: Primary=price, Secondary=healthy
+2. Define key function:
+   ```python
+   def key_func(recipe):
+       primary = recipe.price
+       secondary = 0 if healthy else 1
+       return (primary, secondary)
+   ```
+3. Choose sorting algorithm (BubbleSort or MergeSort)
+4. `sorter.sort(recipes, key_func=key_func)`
+5. Returns sorted recipes (cheap first, then healthy)
+
+---
+
+## 📂 Directory Layout Summary
+
+| Directory | Contents | Purpose |
+|-----------|----------|---------|
+| Root | `main.py`, `gui_app.py`, `test_demo.py`, `README.md` | Entry points & documentation |
+| `recipe_system/` | `recipe.py`, `manager.py`, `sorting.py`, `logic.py` | Core business logic |
+| Root | `recipes.csv` | Sample data |
+| Root | `COMMENTS_GUIDE.md`, `COMMENTS_COMPLETE.txt` | Learning resources |
+
+---
+
+## 🔄 Data Format: CSV Structure
+
+All recipes stored in comma-separated format with semicolon-separated lists:
+
+```csv
+name,category,price,time_minutes,ingredients,steps,calories,difficulty
+Chicken Salad,main,5.5,15,chicken;lettuce;tomato;dressing,Chop;Mix;Serve,350,Easy
+Pancakes,dessert,3.0,20,flour;milk;eggs;butter,Mix;Cook;Plate,450,Medium
+Tomato Soup,soup,2.5,25,tomato;onion;broth;cream,Sauté;Simmer;Blend,200,Easy
+Grilled Cheese,starter,2.0,10,bread;cheese;butter,Assemble;Grill;Serve,400,Easy
+Stir Fry Chicken,main,6.0,18,chicken;soy;vegetables;oil,Prepare;Stir;Serve,500,Medium
+```
+
+**Format Rules:**
+- Ingredients separated by `;` (no spaces)
+- Steps separated by `;` (no spaces)
+- Fields must match column headers exactly
+- All numeric values must be valid
 - Full truth table generation
 
 Example: \(cheap or quick) and healthy\
