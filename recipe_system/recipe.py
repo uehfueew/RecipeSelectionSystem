@@ -15,7 +15,7 @@ class Recipe:
         self.difficulty = difficulty
 
     def to_dict(self) -> Dict[str, str]:
-        """Converts the Recipe object to a dictionary for CSV exporting."""
+        
         return {
             "name": self.name,
             "category": self.category,
@@ -26,9 +26,15 @@ class Recipe:
             "calories": str(self.calories),
             "difficulty": self.difficulty,
         }
-
+    
+    #“I have recipe data stored as a dictionary (for example from a CSV file).
+    #How do I turn that dictionary into a Recipe object?”
     @staticmethod
-    def from_dict(d: Dict[str, str]) -> "Recipe":
+    
+    def from_dict(d: Dict[str, str]) -> "Recipe": #“This method belongs to the Recipe class,but it does NOT belong to a specific recipe object.”
+        #The class is still being defined
+        #Python hasn’t fully created Recipe yet
+        #This is called a forward reference.
         """Creates a Recipe object from a dictionary (used for CSV loading)."""
         ingredients = [i.strip() for i in d.get("ingredients", "").split(";") if i.strip()]
         steps = [s.strip() for s in d.get("steps", "").split(";") if s.strip()]

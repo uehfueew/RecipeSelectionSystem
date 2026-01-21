@@ -27,6 +27,7 @@ class RecipeManager:
 
     def save_csv(self, path: str):
         """Saves current recipes to CSV using Pandas DataFrame functionality."""
+        """It takes the Recipe objects, converts them into DataFrames, and then saves them as a CSV file."""
         if not self.recipes:
             return
             
