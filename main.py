@@ -36,6 +36,22 @@ def input_list(prompt: str):
     
     Items should be separated by semicolons (;)
     Extra spaces are automatically trimmed from each item
+    
+    Args:
+        prompt: The question to ask the user
+        
+    Returns:
+        A list of strings, one for each item entered
+        
+    Example:
+        input_list('Ingredients') with input "chicken; rice; oil" returns
+        ['chicken', 'rice', 'oil']
+    """
+    s = input(prompt + " (separate items with ;): ")
+    return [i.strip() for i in s.split(';') if i.strip()]
+
+
+def show_recipe_detail(r: Recipe):
     """
     Displays detailed information about a recipe.
     
@@ -49,18 +65,18 @@ def input_list(prompt: str):
     Args:
         r: A Recipe object to display
     """
-    
-    Args:
-        prompt: The question to ask the user
-        
-    Returns:
-        A list of strings, one for each item entered
-        
-    Example:
-        input_list('Ingredients') with input "chicken; rice; oil" returns
-        ['chicken', 'rice', 'oil']
-    """
-    s = input(prompt + " (separate items with ;): ")
+    print(f"Name: {r.name}")
+    print(f"Category: {r.category}")
+    print(f"Price: ${r.price:.2f}")
+    print(f"Time: {r.time_minutes} minutes")
+    print(f"Ingredients: {', '.join(r.ingredients)}")
+    print("Steps:")
+    for i, s in enumerate(r.steps, 1):
+        print(f"  {i}. {s}")
+    print(f"Calories: {r.calories} | Difficulty: {r.difficulty}")
+
+
+def performance_test(manager: RecipeManager):
     """
     Runs a performance comparison test between Bubble Sort and Merge Sort.
     
@@ -73,28 +89,6 @@ def input_list(prompt: str):
     Args:
         manager: The RecipeManager containing recipes to test
     """
-    sizes = [10, 50, 100]
-    print("Performance test (Bubble vs Merge):")
-    for n in sizes:
-        # Create a sample by repeating recipes as needed
-        sample = (manager.recipes * ((n // max(1, len(manager.recipes))) + 1))[:n]
-        
-        # Initialize both sorting algorithms
-        b = BubbleSort()
-        m = MergeSort()
-        
-        # Time Bubble Sort
-        start = time.time()
-        b.sort(sample, key_func=lambda r: r.time_minutes)
-        t_b = time.time() - start
-        
-        # Time Merge Sort
-        start = time.time()
-        m.sort(sample, key_func=lambda r: r.time_minutes)
-        t_m = time.time() - start
-        
-        # Display results
-def performance_test(manager: RecipeManager):
     sizes = [10, 50, 100]
     print("Performance test (Bubble vs Merge):")
     for n in sizes:
