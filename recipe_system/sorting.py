@@ -13,7 +13,7 @@ Key Concepts:
 """
 
 from abc import ABC, abstractmethod
-from typing import Callable, List, Optional, Sequence, TypeVar
+from typing import Callable, List, Optional, Sequence, TypeVar, Any
 
 # TypeVar 'T' allows these functions to work with ANY type of object
 T = TypeVar('T')
@@ -26,7 +26,7 @@ class SortingAlgorithm(ABC):
     This ensures all algorithms have consistent method signatures.
     """
     @abstractmethod
-    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None, reverse: bool = False) -> List[T]:
+    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> List[T]:
         """
         Sorts a sequence of items and returns a new sorted list.
         
@@ -59,7 +59,7 @@ class BubbleSort(SortingAlgorithm):
     When to use: Good for learning, but avoid for large datasets
     """
     
-    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None, reverse: bool = False) -> List[T]:
+    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> List[T]:
         """
         Sorts items using the Bubble Sort algorithm.
         
@@ -87,7 +87,16 @@ class BubbleSort(SortingAlgorithm):
             # Inner loop: compare adjacent elements
             for j in range(0, n - i - 1):
                 # Determine if we should swap (depends on reverse flag)
-                should_swap = key(arr[j]) < key(arr[j + 1]) if reverse else key(arr[j]) > key(arr[j + 1])
+                # Get values once to avoid re-calculating (optimization)
+                val1 = key(arr[j])
+                val2 = key(arr[j + 1])
+                
+                should_swap = False
+                if reverse:
+                    if val1 < val2: should_swap = True
+                else:
+                    if val1 > val2: should_swap = True
+                
                 if should_swap:
                     # Swap adjacent elements
                     arr[j], arr[j + 1] = arr[j + 1], arr[j]
@@ -113,7 +122,7 @@ class MergeSort(SortingAlgorithm):
     When to use: Better than BubbleSort for large datasets (>100 items)
     """
     
-    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], object]] = None, reverse: bool = False) -> List[T]:
+    def sort(self, items: Sequence[T], key_func: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> List[T]:
         """
         Sorts items using the Merge Sort algorithm (recursive divide-and-conquer).
         
@@ -144,7 +153,7 @@ class MergeSort(SortingAlgorithm):
         # Conquer: Merge the two sorted halves back together
         return self._merge(left, right, key, reverse)
 
-    def _merge(self, left: List[T], right: List[T], key: Callable[[T], object], reverse: bool) -> List[T]:
+    def _merge(self, left: List[T], right: List[T], key: Callable[[T], Any], reverse: bool) -> List[T]:
         """
         Merges two sorted lists into one sorted list.
         
