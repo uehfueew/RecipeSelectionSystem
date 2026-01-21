@@ -64,7 +64,9 @@ class Recipe:
             "calories": str(self.calories),
             "difficulty": self.difficulty,
         }
-
+    
+    #“I have recipe data stored as a dictionary (for example from a CSV file).
+    #How do I turn that dictionary into a Recipe object?”
     @staticmethod
     def from_dict(d: Dict[str, str]) -> "Recipe":
         """
