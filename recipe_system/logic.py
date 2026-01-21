@@ -36,6 +36,12 @@ def _collect_vars(node, vars_set: set):
         node: An AST node to analyze
         vars_set: A set that will be populated with variable names
     """
+    # If this node is a variable name, add it to the set
+    if isinstance(node, ast.Name):
+        vars_set.add(node.id)
+    # Recursively check all child nodes
+    for child in ast.iter_child_nodes(node):
+        _collect_vars(child, vars_set)
 
 
 def parse_vars(expr: str) -> List[str]:
@@ -49,6 +55,31 @@ def parse_vars(expr: str) -> List[str]:
         A sorted list of unique variable names found in the expression
         
     Raises:
+        LogicEvalError: If the expression cannot be parsed
+        
+    Examples:
+        parse_vars("A AND B") -> ["A", "B"]
+        parse_vars("(healthy OR quick) AND cheap") -> ["cheap", "healthy", "quick"]
+    """
+    # Normalize operators to Python syntax
+    expr = expr.replace('∧', ' and ').replace('∨', ' or ').replace('¬', ' not ')
+    expr = expr.replace('AND', 'and').replace('OR', 'or').replace('NOT', 'not')
+    
+    try:
+        # Parse the expression into an Abstract Syntax Tree
+        tree = ast.parse(expr, mode='eval')
+    except SyntaxError as e:
+        raise LogicEvalError(f"Syntax error in expression: {e}")
+    
+    # Collect all variable names from the tree
+    vars_set = set()
+    _collect_vars(tree, vars_set)
+    
+    # Return sorted list for consistent ordering
+    return sorted(vars_set)
+
+
+def _eval_node(node, env: Dict[str, bool]):
     """
     Helper function: Recursively evaluates an AST node given variable values.
     
@@ -66,14 +97,43 @@ def parse_vars(expr: str) -> List[str]:
         
     Raises:
         LogicEvalError: If there's an unknown variable or unsupported operator
-    """t.USub):
+    """
+    # Handle Expression wrapper nodes
+    if isinstance(node, ast.Expression):
+        return _eval_node(node.body, env)
+    
+    # Handle variable names - look up their value in the environment
+    if isinstance(node, ast.Name):
+        if node.id in env:
+            return bool(env[node.id])
+        raise LogicEvalError(f"Unknown variable: {node.id}")
+    
+    # Handle NOT operator (unary operation)
+    if isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.Not):
+            return not _eval_node(node.operand, env)
+        # Reject unsupported unary operators like negation (-)
         raise LogicEvalError("Unsupported operator")
+    
+    # Handle AND and OR operators (boolean operations)
     if isinstance(node, ast.BoolOp):
+        # AND: all values must be True
         if isinstance(node.op, ast.And):
             return all(_eval_node(v, env) for v in node.values)
+        # OR: at least one value must be True
         if isinstance(node.op, ast.Or):
             return any(_eval_node(v, env) for v in node.values)
-    if isinstance(node, ast.Call):
+    
+    # Handle boolean constants (True/False literals)
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, bool):
+            return node.value
+    
+    # Reject any other node types as unsupported
+    raise LogicEvalError(f"Unsupported operation: {type(node).__name__}")
+
+
+def eval_expr(expr: str, env: Dict[str, bool]) -> bool:
     """
     Evaluates a boolean expression with given variable values.
     
@@ -107,6 +167,33 @@ def parse_vars(expr: str) -> List[str]:
     expr = expr.replace('∧', ' and ').replace('∨', ' or ').replace('¬', ' not ')
     # Support uppercase versions too
     expr = expr.replace('AND', 'and').replace('OR', 'or').replace('NOT', 'not')
+    
+    try:
+        # Parse the expression into an Abstract Syntax Tree (AST)
+        tree = ast.parse(expr, mode='eval')
+    except SyntaxError as e:
+        raise LogicEvalError(f"Syntax error: {e}")
+    
+    # Security check: validate that only safe operations are used
+    # Block arithmetic, comparisons, function calls, etc.
+    invalid_nodes = [ast.BinOp, ast.Compare, ast.Attribute, ast.Subscript, ast.Assign]
+    
+    # Also block number and string literals (for older Python versions)
+    for legacy in ("Num", "Str"):
+        legacy_type = getattr(ast, legacy, None)
+        if legacy_type:
+            invalid_nodes.append(legacy_type)
+    
+    # Scan the entire AST for forbidden node types
+    for node in ast.walk(tree):
+        if isinstance(node, tuple(invalid_nodes)):
+            raise LogicEvalError("Only boolean expressions with variables, and/or/not, and parentheses are allowed")
+    
+    # Evaluate the validated expression
+    return bool(_eval_node(tree, env))
+
+
+def truth_table(expr: str, env_template: Dict[str, bool] = None) -> Tuple[List[str], List[Tuple[List[int], int]]]:
     """
     Generates a complete truth table for a boolean expression.
     
@@ -158,40 +245,5 @@ def parse_vars(expr: str) -> List[str]:
         # Evaluate the expression with this combination
         res = 1 if eval_expr(expr, env) else 0
         rows.append((vals, res))
-    :
-        legacy_type = getattr(ast, legacy, None)
-        if legacy_type:
-            invalid_nodes.append(legacy_type)
     
-    # Scan the entire AST for forbidden node types
-    for node in ast.walk(tree):
-        if isinstance(node, tuple(invalid_nodes)):
-            raise LogicEvalError("Only boolean expressions with variables, and/or/not, and parentheses are allowed")
-    
-    # Evaluate the validated expression
-    # validate AST
-    invalid_nodes = [ast.BinOp, ast.Compare, ast.Attribute, ast.Subscript, ast.Assign]
-    for legacy in ("Num", "Str"):
-        legacy_type = getattr(ast, legacy, None)
-        if legacy_type:
-            invalid_nodes.append(legacy_type)
-    for node in ast.walk(tree):
-        if isinstance(node, tuple(invalid_nodes)):
-            raise LogicEvalError("Only boolean expressions with variables, and/or/not, and parentheses are allowed")
-    return bool(_eval_node(tree, env))
-
-
-def truth_table(expr: str, env_template: Dict[str, bool] = None) -> Tuple[List[str], List[Tuple[List[int], int]]]:
-    vars_ = parse_vars(expr)
-    rows = []
-    n = len(vars_)
-    for mask in range(1 << n):
-        env = {}
-        vals = []
-        for i, v in enumerate(vars_):
-            bit = (mask >> (n - i - 1)) & 1
-            env[v] = bool(bit)
-            vals.append(bit)
-        res = 1 if eval_expr(expr, env) else 0
-        rows.append((vals, res))
     return vars_, rows

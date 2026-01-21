@@ -45,6 +45,9 @@ class TestRecipeSystem(unittest.TestCase):
         # Check that we loaded exactly 5 recipes
         self.assertEqual(len(self.manager.recipes), 5)
         # Check that the first recipe is correct
+        self.assertEqual(self.manager.recipes[0].name, "Chicken Salad")
+
+    def test_search_methods(self):
         """Test 2: Verify all search methods work correctly."""
         # Test search by exact name
         self.assertIsNotNone(self.manager.find_by_name("Pancakes"))
@@ -54,8 +57,10 @@ class TestRecipeSystem(unittest.TestCase):
         self.assertEqual(len(mains), 2)
         
         # Test search by ingredient
-        self.assertIsNotNone(self.manager.find_by_name("Pancakes"))
-        mains = self.manager.search_by_category("main")
+        chicken_matches = {r.name for r in self.manager.search_by_ingredient("chicken")}
+        self.assertIn("Chicken Salad", chicken_matches)
+
+    def test_eval_expression(self):
         """Test 3: Verify that boolean expression evaluation works correctly."""
         # Get a sample recipe and create a boolean environment for it
         salad = self.manager.find_by_name("Chicken Salad")
@@ -75,6 +80,12 @@ class TestRecipeSystem(unittest.TestCase):
             "cheap": pancakes.price < 4.0,
             "quick": pancakes.time_minutes <= 15,
             "healthy": pancakes.calories < 400,
+        }
+        # Pancakes are cheap but not contain chicken
+        self.assertFalse(eval_expr("contains_chicken", env_pan))
+        self.assertTrue(eval_expr("cheap", env_pan))
+
+    def test_truth_table(self):
         """Test 4: Verify that truth tables are generated correctly."""
         # Generate truth table for "A and B"
         vars_, rows = truth_table("A and B")
@@ -87,6 +98,10 @@ class TestRecipeSystem(unittest.TestCase):
         # 0,1 -> 0 (F and T = F)
         # 1,0 -> 0 (T and F = F)
         # 1,1 -> 1 (T and T = T)
+        expected = [([0, 0], 0), ([0, 1], 0), ([1, 0], 0), ([1, 1], 1)]
+        self.assertEqual(rows, expected)
+
+    def test_bubble_sort_by_time(self):
         """Test 5: Verify that Bubble Sort correctly sorts recipes by cooking time."""
         sorter = BubbleSort()
         # Sort all recipes by their cooking time
@@ -96,14 +111,21 @@ class TestRecipeSystem(unittest.TestCase):
         times = [r.time_minutes for r in sorted_list]
         
         # Verify they are in ascending order (matches sorted times)
-            "quick": pancakes.time_minutes <= 15,
-            "healthy": pancakes.calories < 400,
+        self.assertEqual(times, sorted(times))
+
+    def test_merge_sort_matches_bubble(self):
         """Test 6: Verify that Merge Sort and Bubble Sort produce identical results."""
         # Define a sort key (by price)
         key = lambda r: r.price
         
         # Sort using both algorithms
         bubble = BubbleSort().sort(self.manager.recipes, key_func=key)
+        merge = MergeSort().sort(self.manager.recipes, key_func=key)
+        
+        # Both should produce the same order
+        self.assertEqual([r.name for r in merge], [r.name for r in bubble])
+
+    def test_secondary_key_sort(self):
         """Test 7: Verify sorting with both primary and secondary keys works correctly."""
         # Create test recipes with specific attributes
         items = [
@@ -134,26 +156,4 @@ class TestRecipeSystem(unittest.TestCase):
 
 if __name__ == "__main__":
     # Run all tests when this file is executed directly
-    def test_secondary_key_sort(self):
-        items = [
-            Recipe("Healthy Tie", "main", 4.0, 30, ["veg"], ["cook"], 200, "Easy"),
-            Recipe("Less Healthy", "main", 4.0, 30, ["veg"], ["cook"], 450, "Medium"),
-            Recipe("Different Price", "main", 3.0, 25, ["veg"], ["cook"], 600, "Hard"),
-        ]
-
-        def key_func(r: Recipe):
-            env = {
-                "contains_chicken": any("chicken" in i.lower() for i in r.ingredients),
-                "cheap": r.price < 4.0,
-                "quick": r.time_minutes <= 15,
-                "healthy": r.calories < 400,
-            }
-            secondary = 0 if eval_expr("healthy", env) else 1
-            return (r.price, secondary)
-
-        sorted_items = MergeSort().sort(items, key_func=key_func)
-        self.assertEqual([r.name for r in sorted_items][:2], ["Different Price", "Healthy Tie"])
-
-
-if __name__ == "__main__":
     unittest.main()
