@@ -12,7 +12,8 @@ from PyQt6.QtWidgets import (
     QPushButton, QLabel, QLineEdit, QComboBox, QTableWidget, QTableWidgetItem,
     QTextEdit, QSpinBox, QDoubleSpinBox, QCheckBox, QMessageBox, QDialog,
     QFormLayout, QDialogButtonBox, QHeaderView, QListWidget, QListWidgetItem,
-    QSplitter, QGroupBox, QGridLayout, QStackedWidget, QFrame, QGraphicsDropShadowEffect
+    QSplitter, QGroupBox, QGridLayout, QStackedWidget, QFrame, QGraphicsDropShadowEffect,
+    QSizePolicy, QAbstractItemView, QStyle
 )
 from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtGui import QColor, QFont, QIcon, QPixmap, QLinearGradient, QPalette
@@ -23,154 +24,310 @@ from recipe_system.sorting import BubbleSort, MergeSort
 from recipe_system.logic import eval_expr, truth_table, LogicEvalError
 import os
 
-# Premium Modern "Chef's Kitchen" theme
+# "Cyber Chef" Dark Theme - High Performance Visuals
 GLOBAL_STYLE = """
-QMainWindow {
-    background-color: #ffffff;
+QWidget {
+    color: #cad3f5;
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 14px;
 }
 
-/* Sidebar Styling */
+QMainWindow, QDialog {
+    background-color: #24273a;  /* Base Dark */
+}
+
+/* --- Sidebar --- */
 #sidebar {
-    background-color: #2d3436;
-    min-width: 220px;
-    max-width: 220px;
-    border-right: 1px solid #dfe6e9;
+    background-color: #1e2030; /* Darker Sidebar */
+    border-right: 1px solid #363a4f;
+    min-width: 240px;
+    max-width: 240px;
 }
 
 #sidebar_title {
-    color: #fab1a0;
-    font-size: 18px;
-    font-weight: bold;
-    padding: 25px 15px;
-    border-bottom: 1px solid #3d4548;
-    margin-bottom: 10px;
+    color: #8aadf4; /* Blue Accent */
+    font-size: 22px;
+    font-weight: 900;
+    padding: 30px 20px;
+    border-bottom: 2px solid #363a4f;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
 }
 
-QPushButton.nav_btn {
+QPushButton[class="nav_btn"] {
     background-color: transparent;
-    color: #b2bec3;
+    color: #a5adcb; /* Subtext */
     text-align: left;
-    padding: 12px 20px;
-    border-radius: 0px;
-    font-size: 14px;
-    font-weight: 500;
-    border-left: 4px solid transparent;
+    padding: 10px 20px; /* Reduced from 15px 25px */
+    border-radius: 10px; /* Slightly tighter radius */
+    margin: 4px 15px; /* Reduced margin */
+    font-size: 14px; /* Slightly smaller font */
+    font-weight: 600;
+    border: 1px solid transparent;
 }
 
-QPushButton.nav_btn:hover {
-    background-color: #3d4548;
-    color: white;
+QPushButton[class="nav_btn"]:hover {
+    background-color: #363a4f; /* Surface 0 */
+    color: #ffffff;
+    border: 1px solid #494d64;
 }
 
-QPushButton.nav_btn[active="true"] {
-    background-color: #3d4548;
-    color: #fab1a0;
-    border-left: 4px solid #fab1a0;
+QPushButton[class="nav_btn"][active="true"] {
+    background-color: #363a4f;
+    color: #8aadf4; /* Blue Accent */
+    border-left: 4px solid #8aadf4; /* Blue Accent Line */
+    padding-left: 16px; /* Adjust for border (20px - 4px = 16px) */
 }
 
-/* Main Content Styling */
+/* --- Content Area --- */
 #content_area {
-    background-color: #f9f9f9;
+    background-color: #24273a;
 }
 
 QGroupBox {
-    background-color: white;
-    border: 1px solid #e1e8ed;
-    border-radius: 12px;
-    margin-top: 20px;
-    font-weight: bold;
-    font-size: 14px;
-    color: #2d3436;
-    padding-top: 25px;
+    background-color: #181926; /* Deep Surface */
+    border: 1px solid #363a4f;
+    border-radius: 16px;
+    margin-top: 30px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #8aadf4; /* Blue Title */
+    padding-top: 10px; /* Reduced from 35px to fix empty space */
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 5px 15px;
+    left: 15px;
+    top: 5px; /* Added to vertically align title if needed */
+    background-color: #24273a;
+    border: 1px solid #363a4f;
+    border-radius: 8px;
+    color: #8aadf4;
 }
 
 QLabel#title_label {
-    color: #2d3436;
-    font-size: 26px;
+    color: #ffffff;
+    font-size: 32px;
     font-weight: 800;
-    margin-bottom: 5px;
+    margin-bottom: 15px;
+    padding-left: 5px;
 }
 
-/* Table Styling */
+/* --- Modern Table --- */
 QTableWidget {
-    background-color: white;
+    background-color: #181926;
+    color: #cad3f5;
+    border: 1px solid #363a4f;
+    border-radius: 12px;
+    gridline-color: transparent;
+    selection-background-color: #363a4f;
+    selection-color: #8aadf4;
+    outline: none;
+    alternate-background-color: #1e2030;
+}
+
+QTableWidget::item {
+    padding: 8px;
+    border-bottom: 1px solid #24273a;
+    outline: none;
+}
+
+QTableWidget::item:focus {
+    outline: none;
     border: none;
-    gridline-color: #f1f2f6;
-    border-radius: 8px;
-    selection-background-color: #fff4f2;
-    selection-color: #e17055;
-    alternate-background-color: #fafafa;
+}
+
+QTableWidget::item:selected {
+    background-color: #363a4f;
+    color: #8aadf4;
+    border-bottom: 1px solid #8aadf4;
+}
+
+QHeaderView {
+    background-color: transparent;
+    border: none;
 }
 
 QHeaderView::section {
-    background-color: white;
+    background-color: #24273a;
+    color: #a5adcb;
     padding: 12px;
     border: none;
-    border-bottom: 2px solid #f1f2f6;
-    font-weight: bold;
-    color: #636e72;
+    border-bottom: 2px solid #8aadf4;
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 11px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
 }
 
-/* Action Buttons */
-QPushButton.primary_btn {
-    background-color: #e17055;
-    color: white;
+QHeaderView::section:horizontal:first {
+    border-top-left-radius: 12px;
+}
+
+QHeaderView::section:horizontal:last {
+    border-top-right-radius: 12px;
+}
+
+/* --- Buttons --- */
+QPushButton, QPushButton[class="primary_btn"] {
+    background-color: #8aadf4; /* Blue accent color */
+    color: #1e2030;            /* Dark text for contrast */
     border-radius: 8px;
-    padding: 12px 24px;
-    font-weight: bold;
+    padding: 12px 20px;
+    font-weight: 700;
     font-size: 13px;
+    border: 1px solid #8aadf4;
 }
 
-QPushButton.primary_btn:hover {
-    background-color: #d35400;
+QPushButton:hover, QPushButton[class="primary_btn"]:hover {
+    background-color: #b7cbf8; /* Slightly lighter blue, definitely not green */
+    border-color: #b7cbf8;
 }
 
-QPushButton.secondary_btn {
-    background-color: #dfe6e9;
-    color: #2d3436;
+QPushButton:pressed, QPushButton[class="primary_btn"]:pressed {
+    background-color: #7dc4e4;
+    border-color: #7dc4e4;
+    padding-top: 14px; /* Press down effect */
+    padding-bottom: 10px;
+}
+
+QPushButton[class="secondary_btn"] {
+    background-color: #363a4f;
+    color: #cad3f5;
     border-radius: 8px;
-    padding: 10px 18px;
+    padding: 12px 20px;
     font-weight: 600;
+    border: 1px solid #494d64;
 }
 
-QPushButton.secondary_btn:hover {
-    background-color: #b2bec3;
+QPushButton[class="secondary_btn"]:hover {
+    background-color: #494d64;
+    color: #ffffff;
+    border: 1px solid #5b6078;
+}
+
+QPushButton[class="secondary_btn"]:pressed {
+    background-color: #24273a;
+    border-color: #363a4f;
 }
 
 QPushButton#delete_btn {
-    background-color: #ff7675;
+    background-color: #363a4f; /* Dark background default */
+    color: #ed8796;            /* Red text */
+    border: 1px solid #ed8796;
 }
 
-/* Inputs */
-QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit {
-    border: 2px solid #dfe6e9;
+QPushButton#delete_btn:hover {
+    background-color: #ed8796; /* Red background on hover */
+    color: #1e2030;            /* Dark text */
+}
+
+/* --- Inputs --- */
+QLineEdit, QSpinBox, QDoubleSpinBox {
+    border: 1px solid #494d64;
     border-radius: 8px;
-    padding: 10px;
-    background-color: white;
-    color: #2d3436;
+    padding: 10px 12px;
+    background-color: #181926;
+    color: #cad3f5;
+    font-size: 14px;
+    selection-background-color: #8aadf4;
+    selection-color: #1e2030;
 }
 
-QLineEdit:focus, QComboBox:focus {
-    border: 2px solid #fab1a0;
+QTextEdit {
+    border: 1px solid #494d64;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background-color: #1e2030;
+    color: #cad3f5;
+    font-size: 14px;
+    selection-background-color: #8aadf4;
+    selection-color: #1e2030;
 }
 
-/* Scrollbars */
+QLineEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover {
+    border: 1px solid #5b6078;
+    background-color: #1e2030;
+}
+
+QTextEdit:hover {
+    border: 1px solid #5b6078;
+    background-color: #1e2030;
+}
+
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QTextEdit:focus {
+    border: 2px solid #8aadf4;
+    background-color: #1e2030;
+    color: #ffffff;
+}
+
+/* --- Combo Box --- */
+QComboBox {
+    border: 1px solid #494d64;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background-color: #181926;
+    color: #cad3f5;
+    min-width: 6em;
+}
+
+QComboBox:hover {
+    border: 1px solid #5b6078;
+    background-color: #1e2030;
+}
+
+QComboBox:on {
+    border: 2px solid #8aadf4;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left-width: 0px;
+}
+
+/* POPUP MENU STYLING */
+QComboBox QAbstractItemView {
+    background-color: #1e2030; 
+    color: #cad3f5;           
+    border: 1px solid #8aadf4;
+    border-radius: 8px;
+    selection-background-color: #363a4f;
+    selection-color: #8aadf4;
+    outline: none;
+    padding: 5px;
+}
+
+/* --- Scrollbars --- */
 QScrollBar:vertical {
     border: none;
-    background: transparent;
-    width: 8px;
+    background: #24273a;
+    width: 12px;
+    margin: 0px; 
 }
 
 QScrollBar::handle:vertical {
-    background: #dfe6e9;
-    border-radius: 4px;
-    min-height: 30px;
+    background: #494d64;
+    min-height: 20px;
+    border-radius: 6px;
+    margin: 2px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: #b2bec3;
+    background: #8aadf4;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
 }
 """
 
@@ -186,6 +343,8 @@ class RecipeTableWidget(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setSelectionBehavior(self.SelectionBehavior.SelectRows)
         self.setAlternatingRowColors(True)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.verticalHeader().setVisible(False)  # Hide vertical row numbers
 
     def load_recipes(self, recipes: List[Recipe]):
         """Load recipes into the table"""
@@ -211,45 +370,122 @@ class AddRecipeDialog(QDialog):
             self.load_recipe()
 
     def init_ui(self):
-        self.setWindowTitle("Recipe Details")
-        self.setMinimumWidth(500)
+        self.setWindowTitle("Recipe Editor")
+        self.setMinimumWidth(700)
         
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        
-        form_layout = QFormLayout()
-        form_layout.setSpacing(10)
+        main_layout.setContentsMargins(30, 40, 30, 30)
+        main_layout.setSpacing(20)
 
+        # Title
+        title = QLabel("Recipe Details")
+        title.setStyleSheet("font-size: 24px; font-weight: 800; color: #f5a97f; margin-bottom: 5px;")
+        main_layout.addWidget(title)
+
+        # Helper to style labels
+        def create_label(text):
+            lbl = QLabel(text)
+            lbl.setStyleSheet("font-weight: 700; color: #a5adcb; font-size: 14px;")
+            return lbl
+
+        # Name
+        name_layout = QVBoxLayout()
+        name_layout.setSpacing(8)
+        name_layout.addWidget(create_label("Recipe Name:"))
         self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("e.g. Grandma's Apple Pie")
+        name_layout.addWidget(self.name_input)
+        main_layout.addLayout(name_layout)
+
+        # Category
+        cat_layout = QVBoxLayout()
+        cat_layout.setSpacing(8)
+        cat_layout.addWidget(create_label("Category:"))
         self.category_input = QLineEdit()
+        self.category_input.setPlaceholderText("e.g. Dessert")
+        cat_layout.addWidget(self.category_input)
+        main_layout.addLayout(cat_layout)
+
+        # Metrics Row (Price, Time, Cal, Diff)
+        metrics_layout = QHBoxLayout()
+        metrics_layout.setSpacing(15)
+
+        # Price
+        price_group = QVBoxLayout()
+        price_group.setSpacing(8)
+        price_group.addWidget(create_label("Price ($)"))
         self.price_input = QDoubleSpinBox()
-        self.price_input.setRange(0, 100)
+        self.price_input.setRange(0, 1000)
+        self.price_input.setButtonSymbols(QDoubleSpinBox.ButtonSymbols.NoButtons)
+        self.price_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        price_group.addWidget(self.price_input)
+        metrics_layout.addLayout(price_group)
+
+        # Time
+        time_group = QVBoxLayout()
+        time_group.setSpacing(8)
+        time_group.addWidget(create_label("Time (min)"))
         self.time_input = QSpinBox()
-        self.time_input.setRange(0, 1000)
-        self.ingredients_input = QTextEdit()
-        self.ingredients_input.setMinimumHeight(80)
-        self.steps_input = QTextEdit()
-        self.steps_input.setMinimumHeight(80)
+        self.time_input.setRange(0, 10000)
+        self.time_input.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.time_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        time_group.addWidget(self.time_input)
+        metrics_layout.addLayout(time_group)
+
+        # Calories
+        cal_group = QVBoxLayout()
+        cal_group.setSpacing(8)
+        cal_group.addWidget(create_label("Calories"))
         self.calories_input = QSpinBox()
-        self.calories_input.setRange(0, 5000)
+        self.calories_input.setRange(0, 10000)
+        self.calories_input.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.calories_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        cal_group.addWidget(self.calories_input)
+        metrics_layout.addLayout(cal_group)
+
+        # Difficulty
+        diff_group = QVBoxLayout()
+        diff_group.setSpacing(8)
+        diff_group.addWidget(create_label("Difficulty"))
         self.difficulty_input = QComboBox()
         self.difficulty_input.addItems(["Easy", "Medium", "Hard"])
+        self.difficulty_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        diff_group.addWidget(self.difficulty_input)
+        metrics_layout.addLayout(diff_group)
 
-        form_layout.addRow("Name:", self.name_input)
-        form_layout.addRow("Category:", self.category_input)
-        form_layout.addRow("Price ($):", self.price_input)
-        form_layout.addRow("Time (min):", self.time_input)
-        form_layout.addRow("Ingredients (;):", self.ingredients_input)
-        form_layout.addRow("Steps (;):", self.steps_input)
-        form_layout.addRow("Calories (kcal):", self.calories_input)
-        form_layout.addRow("Difficulty:", self.difficulty_input)
+        main_layout.addLayout(metrics_layout)
 
+        # Text Areas
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(15)
+        
+        text_layout.addWidget(create_label("Ingredients (semicolon separated):"))
+        self.ingredients_input = QTextEdit()
+        self.ingredients_input.setPlaceholderText("Flour; Sugar; Eggs; Milk")
+        self.ingredients_input.setMinimumHeight(80)
+        text_layout.addWidget(self.ingredients_input)
+
+        text_layout.addWidget(create_label("Steps (semicolon separated):"))
+        self.steps_input = QTextEdit()
+        self.steps_input.setPlaceholderText("Mix ingredients; Bake at 350F; Serve warm")
+        self.steps_input.setMinimumHeight(80)
+        text_layout.addWidget(self.steps_input)
+
+        main_layout.addLayout(text_layout)
+        main_layout.addSpacing(10)
+
+        # Buttons
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        ok_btn.setText("Save Recipe")
+        ok_btn.setProperty("class", "primary_btn")
+        
+        cancel_btn = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        cancel_btn.setProperty("class", "secondary_btn")
+
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         
-        main_layout.addLayout(form_layout)
-        main_layout.addSpacing(10)
         main_layout.addWidget(buttons)
 
         self.setLayout(main_layout)
@@ -328,20 +564,16 @@ class RecipeGUI(QMainWindow):
         for text, index in nav_items:
             btn = QPushButton(text)
             btn.setProperty("active", "false")
+            btn.setProperty("class", "nav_btn")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(lambda checked, idx=index: self.change_page(idx))
-            btn.setObjectName("nav_btn")
+            # btn.setObjectName("nav_btn") # Replaced by class property for better CSS handling
             btn.setMinimumHeight(50)
-            btn.setCheckable(True) # Just for styling convenience
+            # Removed setCheckable(True) to fix the "sticky" selection issue
             sidebar_layout.addWidget(btn)
             self.nav_buttons.append(btn)
 
         sidebar_layout.addStretch()
-        
-        # User feedback status in sidebar
-        self.status_label = QLabel("Ready")
-        self.status_label.setStyleSheet("color: #636e72; padding: 20px; font-size: 11px;")
-        sidebar_layout.addWidget(self.status_label)
         
         self.sidebar.setLayout(sidebar_layout)
         main_layout.addWidget(self.sidebar)
@@ -387,7 +619,7 @@ class RecipeGUI(QMainWindow):
         layout.addWidget(title)
         
         subtitle = QLabel("Select a recipe below to view detailed cooking instructions and nutrition facts.")
-        subtitle.setStyleSheet("color: #636e72; margin-bottom: 20px; font-size: 13px;")
+        subtitle.setStyleSheet("color: #ffffff; margin-bottom: 20px; font-size: 13px;")
         layout.addWidget(subtitle)
 
         # Recipe table
@@ -401,6 +633,9 @@ class RecipeGUI(QMainWindow):
         self.detail_text.setReadOnly(True)
         self.detail_text.setMinimumHeight(350)
         self.detail_text.setFrameStyle(0)
+        self.detail_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.detail_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.detail_text.setStyleSheet("QScrollBar {height:0px; width:0px;}") # Force hide
         detail_layout.addWidget(self.detail_text)
         detail_group.setLayout(detail_layout)
         
@@ -409,7 +644,7 @@ class RecipeGUI(QMainWindow):
         splitter.addWidget(self.recipe_table)
         splitter.addWidget(detail_group)
         splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 1)
+        splitter.setStretchFactor(1, 2) # Give Spotlight twice the space
         layout.addWidget(splitter)
 
         # Connect selection
@@ -444,7 +679,7 @@ class RecipeGUI(QMainWindow):
         search_by_name_btn.setObjectName("search_btn")
         search_by_name_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         search_by_name_btn.setFixedWidth(150)
-        search_by_name_btn.setStyleSheet("background-color: #e17055; color: white; border-radius: 6px; padding: 8px; font-weight: bold;")
+        search_by_name_btn.setStyleSheet("background-color: #8aadf4; color: #1e2030; border-radius: 6px; padding: 10px; font-weight: bold;")
         search_by_name_btn.clicked.connect(self.search_by_name)
         search_layout.addWidget(search_by_name_btn, 0, 2)
 
@@ -455,7 +690,7 @@ class RecipeGUI(QMainWindow):
         search_by_cat_btn = QPushButton("Search Category")
         search_by_cat_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         search_by_cat_btn.setFixedWidth(150)
-        search_by_cat_btn.setStyleSheet("background-color: #e17055; color: white; border-radius: 6px; padding: 8px; font-weight: bold;")
+        search_by_cat_btn.setStyleSheet("background-color: #8aadf4; color: #1e2030; border-radius: 6px; padding: 10px; font-weight: bold;")
         search_by_cat_btn.clicked.connect(self.search_by_category)
         search_layout.addWidget(search_by_cat_btn, 1, 2)
 
@@ -466,7 +701,7 @@ class RecipeGUI(QMainWindow):
         search_by_ing_btn = QPushButton("Search Ingredient")
         search_by_ing_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         search_by_ing_btn.setFixedWidth(150)
-        search_by_ing_btn.setStyleSheet("background-color: #e17055; color: white; border-radius: 6px; padding: 8px; font-weight: bold;")
+        search_by_ing_btn.setStyleSheet("background-color: #8aadf4; color: #1e2030; border-radius: 6px; padding: 10px; font-weight: bold;")
         search_by_ing_btn.clicked.connect(self.search_by_ingredient)
         search_layout.addWidget(search_by_ing_btn, 2, 2)
 
@@ -524,7 +759,8 @@ class RecipeGUI(QMainWindow):
 
         sort_btn = QPushButton("Apply Sorting")
         sort_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        sort_btn.setStyleSheet("background-color: #fab1a0; color: #d35400; border-radius: 8px; padding: 12px; font-weight: bold; border: 1px solid #e17055;")
+        # Using consistent blue theme
+        sort_btn.setStyleSheet("background-color: #8aadf4; color: #1e2030; border-radius: 8px; padding: 12px; font-weight: bold; border: 1px solid #8aadf4;")
         sort_btn.clicked.connect(self.apply_sort)
         sort_layout.addWidget(sort_btn, 4, 1)
 
@@ -561,23 +797,30 @@ class RecipeGUI(QMainWindow):
         logic_layout.setSpacing(10)
         
         logic_layout.addWidget(QLabel("Expression (Variables: cheap, quick, healthy, contains_chicken):"))
+        
+        # Horizontal layout for Input + Button
+        input_layout = QHBoxLayout()
         self.logic_expr_input = QLineEdit()
         self.logic_expr_input.setPlaceholderText("e.g., (cheap or quick) and healthy")
-        logic_layout.addWidget(self.logic_expr_input)
+        input_layout.addWidget(self.logic_expr_input)
 
         logic_btn = QPushButton("Filter Recipes")
+        logic_btn.setFixedWidth(140)
         logic_btn.clicked.connect(self.logic_search)
-        logic_layout.addWidget(logic_btn)
+        input_layout.addWidget(logic_btn)
+
+        logic_layout.addLayout(input_layout)
         logic_card.setLayout(logic_layout)
         layout.addWidget(logic_card)
 
         # Results
         results_group = QGroupBox("Filtered Recipes")
         results_layout = QVBoxLayout()
+        results_layout.setContentsMargins(10, 15, 10, 10)
         self.logic_results_table = RecipeTableWidget()
         results_layout.addWidget(self.logic_results_table)
         results_group.setLayout(results_layout)
-        layout.addWidget(results_group)
+        layout.addWidget(results_group, 1)  # Stretch factor 1 to maximize space
 
         # Truth table
         tt_card = QGroupBox("Truth Table Generator")
@@ -598,7 +841,7 @@ class RecipeGUI(QMainWindow):
         # Truth table display
         self.tt_display = QTextEdit()
         self.tt_display.setReadOnly(True)
-        self.tt_display.setMaximumHeight(200)
+        self.tt_display.setMaximumHeight(100)
         self.tt_display.setFont(QFont("Consolas", 10))
         tt_main_layout.addWidget(self.tt_display)
         
@@ -612,53 +855,95 @@ class RecipeGUI(QMainWindow):
         """Create recipe management tab"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
 
-        # Title
+        # Header Row (Title + Icons)
+        header_layout = QHBoxLayout()
+        
         title = QLabel("Recipe Inventory")
         title.setObjectName("title_label")
-        layout.addWidget(title)
-
-        # Buttons
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(10)
+        header_layout.addWidget(title)
         
+        header_layout.addStretch()
+        
+        # Icon Button Style
+        icon_btn_style = """
+            QPushButton {
+                background-color: #363a4f; /* Darker background for visibility */
+                border: 1px solid #494d64;
+                border-radius: 8px;
+                padding: 8px;
+                min-width: 32px;
+                min-height: 32px;
+            }
+            QPushButton:hover {
+                background-color: #494d64;
+                border-color: #5b6078;
+            }
+        """
+
+        # Delete Icon
+        delete_btn = QPushButton()
+        delete_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon))
+        delete_btn.setIconSize(QSize(20, 20))
+        delete_btn.setToolTip("Delete Selected")
+        delete_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Unique hover for delete (Reddish)
+        delete_btn.setStyleSheet(icon_btn_style + "QPushButton:hover { background-color: #ed8796; border-color: #ed8796; }")
+        delete_btn.clicked.connect(self.delete_recipe)
+        header_layout.addWidget(delete_btn)
+
+        layout.addLayout(header_layout)
+
+        # Main Table Area
+        self.manage_table = RecipeTableWidget()
+        layout.addWidget(self.manage_table)
+
+        # Footer Buttons
+        footer_layout = QHBoxLayout()
+        footer_layout.setSpacing(15)
+        
+        # Consistent Blue Style for Action Buttons
+        btn_style = """
+            QPushButton {
+                background-color: #8aadf4; 
+                color: #1e2030;
+                border-radius: 8px;
+                padding: 12px 20px;
+                font-weight: 700;
+                font-size: 13px;
+                border: 1px solid #8aadf4;
+            }
+            QPushButton:hover {
+                background-color: #b7cbf8; /* Periwinkle hover (Not Green) */
+                border-color: #b7cbf8;
+            }
+            QPushButton:pressed {
+                background-color: #7dc4e4;
+                border-color: #7dc4e4;
+            }
+        """
+
         add_btn = QPushButton("Add New Recipe")
+        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        add_btn.setStyleSheet(btn_style)
         add_btn.clicked.connect(self.add_recipe)
-        btn_layout.addWidget(add_btn)
+        footer_layout.addWidget(add_btn)
 
         edit_btn = QPushButton("Edit Selected")
+        edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        edit_btn.setStyleSheet(btn_style)
         edit_btn.clicked.connect(self.edit_recipe)
-        btn_layout.addWidget(edit_btn)
-
-        delete_btn = QPushButton("Delete Selected")
-        delete_btn.setObjectName("delete_btn")
-        delete_btn.clicked.connect(self.delete_recipe)
-        btn_layout.addWidget(delete_btn)
+        footer_layout.addWidget(edit_btn)
 
         export_btn = QPushButton("Export CSV")
+        export_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        export_btn.setStyleSheet(btn_style)
         export_btn.clicked.connect(self.export_csv)
-        btn_layout.addWidget(export_btn)
+        footer_layout.addWidget(export_btn)
 
-        reload_btn = QPushButton("Reload All")
-        reload_btn.clicked.connect(self.reload_csv)
-        btn_layout.addWidget(reload_btn)
-
-        layout.addLayout(btn_layout)
-
-        # Recipe list
-        manage_group = QGroupBox("Current Recipe Database")
-        manage_layout = QVBoxLayout()
-        self.manage_table = RecipeTableWidget()
-        manage_layout.addWidget(self.manage_table)
-        manage_group.setLayout(manage_layout)
-        layout.addWidget(manage_group)
-
-        # Status
-        self.status_label = QLabel("Database Ready")
-        self.status_label.setStyleSheet("color: #7f8c8d; font-style: italic;")
-        layout.addWidget(self.status_label)
+        layout.addLayout(footer_layout)
 
         widget.setLayout(layout)
         return widget
@@ -692,20 +977,25 @@ class RecipeGUI(QMainWindow):
 
         # Test parameters
         test_card = QGroupBox("Benchmarking Tool")
-        test_layout = QGridLayout()
+        
+        # Single row layout
+        test_layout = QHBoxLayout()
         test_layout.setContentsMargins(15, 20, 15, 15)
         test_layout.setSpacing(10)
         
-        test_layout.addWidget(QLabel("Dataset Size Factor:"), 0, 0)
+        test_layout.addWidget(QLabel("Dataset Size Factor:"))
+        
         self.perf_size = QSpinBox()
-        self.perf_size.setRange(1, 10)
+        self.perf_size.setRange(1, 10000)
         self.perf_size.setValue(3)
-        test_layout.addWidget(self.perf_size, 0, 1)
+        self.perf_size.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons) # Remove arrows
+        test_layout.addWidget(self.perf_size)
 
         test_btn = QPushButton("Run Comparison Test")
+        test_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         test_btn.clicked.connect(self.run_performance_test)
-        test_layout.addWidget(test_btn, 1, 1)
-
+        test_layout.addWidget(test_btn)
+        
         test_card.setLayout(test_layout)
         layout.addWidget(test_card)
 
@@ -745,36 +1035,48 @@ class RecipeGUI(QMainWindow):
         row = self.recipe_table.currentRow()
         if row >= 0 and row < len(self.current_recipes):
             recipe = self.current_recipes[row]
-            # Advanced HTML with dynamic coloring for difficulty
-            diff_color = "#2ecc71" if recipe.difficulty == "Easy" else ("#f1c40f" if recipe.difficulty == "Medium" else "#e74c3c")
+            # Advanced HTML with dynamic coloring for difficulty in Dark Mode
+            diff_color = "#a6da95" if recipe.difficulty == "Easy" else ("#eed49f" if recipe.difficulty == "Medium" else "#ed8796")
+            # Using Catppuccin-inspired Dark Theme colors for internal HTML
+            # Using HTML Tables instead of Flex/Grid for compatibility with QTextEdit
             details = f"""
-                <div style='font-family: "Segoe UI", sans-serif; background: #fff; border-radius: 12px;'>
-                    <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
-                        <h1 style='color: #2d3436; margin: 0; font-size: 24px;'>{recipe.name}</h1>
-                        <span style='background: {diff_color}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 12px;'>{recipe.difficulty.upper()}</span>
-                    </div>
-                    <p style='color: #636e72; margin-top: 5px; font-weight: 500;'>{recipe.category} • ${recipe.price:.2f}</p>
-                    <div style='display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0;'>
-                        <div style='background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;'>
-                            <div style='color: #e17055; font-size: 20px; font-weight: bold;'>{recipe.time_minutes}</div>
-                            <div style='color: #b2bec3; font-size: 11px;'>MINUTES</div>
-                        </div>
-                        <div style='background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;'>
-                            <div style='color: #e17055; font-size: 20px; font-weight: bold;'>{recipe.calories}</div>
-                            <div style='color: #b2bec3; font-size: 11px;'>CALORIES</div>
-                        </div>
-                        <div style='background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;'>
-                            <div style='color: #e17055; font-size: 20px; font-weight: bold;'>{len(recipe.ingredients)}</div>
-                            <div style='color: #b2bec3; font-size: 11px;'>INGREDIENTS</div>
-                        </div>
-                    </div>
-                    <div style='margin-bottom: 20px;'>
-                        <h3 style='color: #2d3436; border-bottom: 2px solid #fab1a0; display: inline-block; padding-bottom: 3px; font-size: 14px;'>Required Ingredients</h3>
-                        <p style='color: #636e72; line-height: 1.6; font-size: 13px;'>{", ".join(recipe.ingredients)}</p>
+                <div style='font-family: "Segoe UI", sans-serif; background: #1e2030; border-radius: 12px; padding: 10px; color: #cad3f5;'>
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td align="left">
+                                <h1 style='color: #8aadf4; margin: 0; font-size: 22px;'>{recipe.name}</h1>
+                            </td>
+                            <td align="right">
+                                <span style='background: {diff_color}; color: #1e2030; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 11px;'>{recipe.difficulty.upper()}</span>
+                            </td>
+                        </tr>
+                    </table>
+                    <p style='color: #a5adcb; margin-top: 2px; font-weight: 500; font-size: 13px;'>{recipe.category} • ${recipe.price:.2f}</p>
+                    
+                    <table width="100%" cellspacing="5" cellpadding="0" style="margin: 10px 0;">
+                        <tr>
+                            <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>
+                                <div style='color: #f5a97f; font-size: 18px; font-weight: bold; text-align: left;'>{recipe.time_minutes}</div>
+                                <div style='color: #a5adcb; font-size: 10px; text-align: left;'>MINUTES</div>
+                            </td>
+                            <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>
+                                <div style='color: #f5a97f; font-size: 18px; font-weight: bold; text-align: left;'>{recipe.calories}</div>
+                                <div style='color: #a5adcb; font-size: 10px; text-align: left;'>CALORIES</div>
+                            </td>
+                            <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>
+                                <div style='color: #f5a97f; font-size: 18px; font-weight: bold; text-align: left;'>{len(recipe.ingredients)}</div>
+                                <div style='color: #a5adcb; font-size: 10px; text-align: left;'>INGREDIENTS</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style='margin-bottom: 10px;'>
+                        <h3 style='color: #f5bde6; border-bottom: 2px solid #363a4f; display: inline-block; padding-bottom: 2px; font-size: 13px; margin: 0;'>Required Ingredients</h3>
+                        <p style='color: #cad3f5; line-height: 1.4; font-size: 12px; margin-top: 5px;'>{", ".join(recipe.ingredients)}</p>
                     </div>
                     <div>
-                        <h3 style='color: #2d3436; border-bottom: 2px solid #fab1a0; display: inline-block; padding-bottom: 3px; font-size: 14px;'>How to Cook</h3>
-                        <p style='color: #636e72; line-height: 1.6; font-size: 13px;'>{", ".join(recipe.steps)}</p>
+                        <h3 style='color: #f5bde6; border-bottom: 2px solid #363a4f; display: inline-block; padding-bottom: 2px; font-size: 13px; margin: 0;'>How to Cook</h3>
+                        <p style='color: #cad3f5; line-height: 1.4; font-size: 12px; margin-top: 5px;'>{", ".join(recipe.steps)}</p>
                     </div>
                 </div>
             """
@@ -786,8 +1088,7 @@ class RecipeGUI(QMainWindow):
         if not name:
             QMessageBox.warning(self, "Input Error", "Please enter a name")
             return
-        recipe = self.manager.find_by_name(name)
-        results = [recipe] if recipe else []
+        results = self.manager.search_by_name(name)
         self.search_results_table.load_recipes(results)
         self.show_status(f"Found {len(results)} recipe(s)")
 
@@ -1005,8 +1306,9 @@ class RecipeGUI(QMainWindow):
 
     def show_status(self, message: str):
         """Update status label"""
-        self.status_label.setText(message)
-        QTimer.singleShot(3000, lambda: self.status_label.setText("Ready"))
+        print(f"Status: {message}")
+        # self.status_label.setText(message)
+        # QTimer.singleShot(3000, lambda: self.status_label.setText("Ready"))
 
 
 def main():

@@ -53,6 +53,10 @@ class RecipeManager:
         """Case-insensitive exact name lookup."""
         return next((r for r in self.recipes if r.name.lower() == name.lower()), None)
 
+    def search_by_name(self, name: str) -> List[Recipe]:
+        """Case-insensitive partial name lookup."""
+        return [r for r in self.recipes if name.lower() in r.name.lower()]
+
     def search_by_category(self, category: str) -> List[Recipe]:
         return [r for r in self.recipes if r.category.lower() == category.lower()]
 
