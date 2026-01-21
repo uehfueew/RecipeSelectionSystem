@@ -28,17 +28,27 @@ from recipe_system.sorting import BubbleSort, MergeSort
 class TestRecipeSystem(unittest.TestCase):
     """Test suite for the entire recipe system."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Set up test fixtures that run once before all tests."""
-        # Find the path to the test data CSV file
-        cls.data_path = os.path.join(os.path.dirname(__file__), "recipes.csv")
-
     def setUp(self):
         """Set up fresh test fixtures before each test method."""
-        # Create a new manager and load recipes for each test
+        # Create a temporary CSV file with known test data
+        self.test_csv = "test_recipes_temp.csv"
+        with open(self.test_csv, "w") as f:
+            f.write("name,category,price,time_minutes,ingredients,steps,calories,difficulty\n")
+            f.write("Chicken Salad,main,5.50,15,chicken;lettuce;dressing,Combine,350,Easy\n")
+            f.write("Pancakes,breakfast,3.50,20,flour;milk;eggs,Mix;Fry,450,Medium\n")
+            f.write("Beef Stew,main,8.50,120,beef;potato;carrot,Stew,600,Hard\n")
+            f.write("Fruit Salad,dessert,4.00,10,apple;banana;orange,Chop;Mix,150,Easy\n")
+            f.write("Vegetable Soup,soup,3.00,45,carrot;potato;onion,Boil,200,Medium\n")
+
+        # Create a new manager and load recipes from the temporary file
         self.manager = RecipeManager()
-        self.manager.load_csv(self.data_path)
+        self.manager.load_csv(self.test_csv)
+
+    def tearDown(self):
+        """Clean up after each test method."""
+        # Remove the temporary file
+        if os.path.exists(self.test_csv):
+            os.remove(self.test_csv)
 
     def test_load_csv(self):
         """Test 1: Verify that CSV file loads correctly and has expected data."""
