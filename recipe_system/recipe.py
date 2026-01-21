@@ -25,7 +25,7 @@ class Recipe:
     """
     
     def __init__(self, name: str, category: str, price: float, time_minutes: int,
-                 ingredients: List[str], steps: List[str], calories: int = 0, difficulty: str = ""):
+                 ingredients: List[str], steps: List[str], calories: int = 0, difficulty: str = "", image_url: str = ""):
         """
         Initialize a new Recipe object.
         
@@ -41,6 +41,7 @@ class Recipe:
         self.steps = steps
         self.calories = max(0, int(calories))  # Ensure calories is never negative
         self.difficulty = difficulty
+        self.image_url = image_url
 
     def to_dict(self) -> Dict[str, str]:
         """
@@ -63,6 +64,7 @@ class Recipe:
             "steps": ";".join(self.steps),
             "calories": str(self.calories),
             "difficulty": self.difficulty,
+            "image_url": self.image_url,
         }
     
     #“I have recipe data stored as a dictionary (for example from a CSV file).
@@ -98,7 +100,8 @@ class Recipe:
             ingredients=ingredients,
             steps=steps,
             calories=int(d.get("calories", 0)),
-            difficulty=d.get("difficulty", "Medium")
+            difficulty=d.get("difficulty", "Medium"),
+            image_url=str(d.get("image_url", ""))
         )
 
     def __str__(self) -> str:

@@ -197,7 +197,8 @@ def main():
             steps = input_list('Steps')
             calories = int(input('Calories (0 if unknown): '))
             diff = input('Difficulty: ')
-            manager.add_recipe(Recipe(name, category, price, time_m, ingredients, steps, calories, diff))
+            img_url = input('Image URL (optional): ')
+            manager.add_recipe(Recipe(name, category, price, time_m, ingredients, steps, calories, diff, img_url))
             print('Added')
 
         # OPTION 4: Edit an existing recipe
@@ -217,6 +218,8 @@ def main():
             new_steps = input(f'Steps (;) [{";".join(r.steps)}]: ')
             new_cal = input(f'Calories [{r.calories}]: ')
             new_diff = input(f'Difficulty [{r.difficulty}]: ') or r.difficulty
+            new_img = input(f'Image URL [{getattr(r, "image_url", "")}]: ') or getattr(r, "image_url", "")
+            
             # Update the recipe object with new values
             r.name = new_name
             r.category = new_cat
@@ -226,6 +229,7 @@ def main():
             if new_steps: r.steps = [s.strip() for s in new_steps.split(';') if s.strip()]
             if new_cal: r.calories = int(new_cal)
             r.difficulty = new_diff
+            r.image_url = new_img
             print('Updated')
 
         # OPTION 5: Delete a recipe

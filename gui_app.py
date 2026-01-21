@@ -6,6 +6,9 @@ Provides a visual interface for recipe management, sorting, searching, and logic
 
 import sys
 import time
+import os
+import hashlib
+import urllib.request
 from typing import List
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
@@ -336,9 +339,9 @@ class RecipeTableWidget(QTableWidget):
     """Custom table widget for displaying recipes"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setColumnCount(8)
+        self.setColumnCount(9)
         self.setHorizontalHeaderLabels([
-            "Name", "Category", "Price", "Time (min)", "Ingredients", "Steps", "Calories", "Difficulty"
+            "Name", "Category", "Price", "Time (min)", "Ingredients", "Steps", "Calories", "Difficulty", "Look"
         ])
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setSelectionBehavior(self.SelectionBehavior.SelectRows)
@@ -358,6 +361,8 @@ class RecipeTableWidget(QTableWidget):
             self.setItem(row, 5, QTableWidgetItem("; ".join(recipe.steps)))
             self.setItem(row, 6, QTableWidgetItem(str(recipe.calories)))
             self.setItem(row, 7, QTableWidgetItem(recipe.difficulty))
+            has_img = "Yes" if getattr(recipe, 'image_url', '') else "No"
+            self.setItem(row, 8, QTableWidgetItem(has_img))
 
 
 class AddRecipeDialog(QDialog):
@@ -388,23 +393,28 @@ class AddRecipeDialog(QDialog):
             lbl.setStyleSheet("font-weight: 700; color: #a5adcb; font-size: 14px;")
             return lbl
 
+        # Top Section (Name, Category, Image)
+        top_layout = QVBoxLayout()
+        
         # Name
-        name_layout = QVBoxLayout()
-        name_layout.setSpacing(8)
-        name_layout.addWidget(create_label("Recipe Name:"))
+        top_layout.addWidget(create_label("Recipe Name:"))
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("e.g. Grandma's Apple Pie")
-        name_layout.addWidget(self.name_input)
-        main_layout.addLayout(name_layout)
-
+        top_layout.addWidget(self.name_input)
+        
         # Category
-        cat_layout = QVBoxLayout()
-        cat_layout.setSpacing(8)
-        cat_layout.addWidget(create_label("Category:"))
+        top_layout.addWidget(create_label("Category:"))
         self.category_input = QLineEdit()
         self.category_input.setPlaceholderText("e.g. Dessert")
-        cat_layout.addWidget(self.category_input)
-        main_layout.addLayout(cat_layout)
+        top_layout.addWidget(self.category_input)
+        
+        # Image URL
+        top_layout.addWidget(create_label("Image URL (http...):"))
+        self.image_input = QLineEdit()
+        self.image_input.setPlaceholderText("http://example.com/image.jpg")
+        top_layout.addWidget(self.image_input)
+        
+        main_layout.addLayout(top_layout)
 
         # Metrics Row (Price, Time, Cal, Diff)
         metrics_layout = QHBoxLayout()
@@ -498,6 +508,8 @@ class AddRecipeDialog(QDialog):
         if self.recipe:
             self.name_input.setText(self.recipe.name)
             self.category_input.setText(self.recipe.category)
+            if hasattr(self.recipe, 'image_url'):
+                self.image_input.setText(self.recipe.image_url)
             self.price_input.setValue(self.recipe.price)
             self.time_input.setValue(self.recipe.time_minutes)
             self.ingredients_input.setText("; ".join(self.recipe.ingredients))
@@ -517,7 +529,8 @@ class AddRecipeDialog(QDialog):
             ingredients=ingredients,
             steps=steps,
             calories=self.calories_input.value(),
-            difficulty=self.difficulty_input.currentText()
+            difficulty=self.difficulty_input.currentText(),
+            image_url=self.image_input.text()
         )
 
 
@@ -1025,6 +1038,43 @@ class RecipeGUI(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not load recipes: {e}")
 
+    def get_cached_image_path(self, url):
+        """Downloads image from URL and returns local path to cache file"""
+        if not url or not url.startswith(('http://', 'https://')):
+            return None
+            
+        try:
+            # Create cache directory if not exists
+            cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "image_cache")
+            if not os.path.exists(cache_dir):
+                os.makedirs(cache_dir)
+                
+            # Create a unique filename based on URL hash
+            url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+            file_ext = os.path.splitext(url)[1]
+            if not file_ext or len(file_ext) > 5:
+                file_ext = ".png" # Default to png if no extension or weird extension
+                
+            filename = f"{url_hash}{file_ext}"
+            file_path = os.path.join(cache_dir, filename)
+            
+            # Download if not already cached
+            if not os.path.exists(file_path):
+                # Use a user-agent to avoid 403 errors from some sites
+                req = urllib.request.Request(
+                    url, 
+                    data=None, 
+                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                )
+                with urllib.request.urlopen(req, timeout=5) as response, open(file_path, 'wb') as out_file:
+                    out_file.write(response.read())
+            
+            # Return absolute path using forward slashes for HTML compatibility
+            return file_path.replace('\\', '/')
+        except Exception as e:
+            print(f"Failed to download image {url}: {e}")
+            return None
+
     def refresh_all_views(self):
         """Refresh all recipe displays"""
         self.recipe_table.load_recipes(self.current_recipes)
@@ -1037,6 +1087,17 @@ class RecipeGUI(QMainWindow):
             recipe = self.current_recipes[row]
             # Advanced HTML with dynamic coloring for difficulty in Dark Mode
             diff_color = "#a6da95" if recipe.difficulty == "Easy" else ("#eed49f" if recipe.difficulty == "Medium" else "#ed8796")
+            
+            # Prepare image HTML if URL exists
+            image_html = ""
+            if hasattr(recipe, 'image_url') and recipe.image_url:
+                local_path = self.get_cached_image_path(recipe.image_url)
+                if local_path:
+                    image_html = f"<div style='margin-top: 10px; text-align: center;'><img src='{local_path}' width='300' style='border-radius: 8px;'></div>"
+                else:
+                    # Fallback if download failed but we have a URL (or it's a local path)
+                    image_html = f"<div style='margin-top: 10px; text-align: center;'><img src='{recipe.image_url}' width='300' style='border-radius: 8px;'></div>"
+
             # Using Catppuccin-inspired Dark Theme colors for internal HTML
             # Using HTML Tables instead of Flex/Grid for compatibility with QTextEdit
             details = f"""
@@ -1052,7 +1113,7 @@ class RecipeGUI(QMainWindow):
                         </tr>
                     </table>
                     <p style='color: #a5adcb; margin-top: 2px; font-weight: 500; font-size: 13px;'>{recipe.category} • ${recipe.price:.2f}</p>
-                    
+                    {image_html}
                     <table width="100%" cellspacing="5" cellpadding="0" style="margin: 10px 0;">
                         <tr>
                             <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>

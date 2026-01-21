@@ -1,6 +1,5 @@
-name,category,price,time_minutes,ingredients,steps,calories,difficulty
-Chicken Salad,main,5.5,15,chicken;lettuce;tomato;olive oil;lemon,Chop ingredients;Mix;Serve,350,Easy
-Pancakes,dessert,3.0,20,flour;milk;egg;sugar,Mix;Fry;Serve,450,Medium
-Tomato Soup,soup,2.5,25,tomato;onion;garlic;water;salt,Boil;Blend;Serve,200,Easy
-Grilled Cheese,starter,2.0,10,bread;cheese;butter,Assemble;Grill;Serve,400,Easy
-Stir Fry Chicken,main,6.0,18,chicken;soy sauce;vegetables;garlic,Stir fry;Serve,500,Medium
+name,category,price,time_minutes,ingredients,steps,calories,difficulty,image_url
+Chicken Salad,main,5.5,15,chicken;lettuce;tomato;olive oil;lemon,Chop ingredients;Mix;Serve,350,Easy,https://res.cloudinary.com/drljgepgy/image/upload/v1769029029/download_7_igyxc4.jpg
+Pancakes,dessert,3.0,20,flour;milk;egg;sugar,Mix;Fry;Serve,450,Medium,https://res.cloudinary.com/drljgepgy/image/upload/v1769029054/download_9_p1cetw.jpg
+Tomato Soup,soup,2.5,25,tomato;onion;garlic;water;salt,Boil;Blend;Serve,200,Easy,https://res.cloudinary.com/drljgepgy/image/upload/v1769029046/images_n2tyzb.jpg
+Grilled Cheese,starter,2.0,10,bread;cheese;butter,Assemble;Grill;Serve,400,Easy,https://res.cloudinary.com/drljgepgy/image/upload/v1769029038/download_8_zwztwm.jpg
