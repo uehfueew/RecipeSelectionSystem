@@ -1088,58 +1088,75 @@ class RecipeGUI(QMainWindow):
             # Advanced HTML with dynamic coloring for difficulty in Dark Mode
             diff_color = "#a6da95" if recipe.difficulty == "Easy" else ("#eed49f" if recipe.difficulty == "Medium" else "#ed8796")
             
-            # Prepare image HTML if URL exists
-            image_html = ""
+            # Prepare image path
+            img_src = ""
             if hasattr(recipe, 'image_url') and recipe.image_url:
                 local_path = self.get_cached_image_path(recipe.image_url)
-                if local_path:
-                    image_html = f"<div style='margin-top: 10px; text-align: center;'><img src='{local_path}' width='300' style='border-radius: 8px;'></div>"
-                else:
-                    # Fallback if download failed but we have a URL (or it's a local path)
-                    image_html = f"<div style='margin-top: 10px; text-align: center;'><img src='{recipe.image_url}' width='300' style='border-radius: 8px;'></div>"
+                img_src = local_path if local_path else recipe.image_url
 
-            # Using Catppuccin-inspired Dark Theme colors for internal HTML
-            # Using HTML Tables instead of Flex/Grid for compatibility with QTextEdit
+            # Using HTML Tables for layout since Flex/Grid support in QTextEdit is limited
+            
+            # 1. Main Table Container
             details = f"""
-                <div style='font-family: "Segoe UI", sans-serif; background: #1e2030; border-radius: 12px; padding: 10px; color: #cad3f5;'>
-                    <table width="100%" cellspacing="0" cellpadding="0">
-                        <tr>
-                            <td align="left">
-                                <h1 style='color: #8aadf4; margin: 0; font-size: 22px;'>{recipe.name}</h1>
-                            </td>
-                            <td align="right">
-                                <span style='background: {diff_color}; color: #1e2030; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 11px;'>{recipe.difficulty.upper()}</span>
-                            </td>
-                        </tr>
-                    </table>
-                    <p style='color: #a5adcb; margin-top: 2px; font-weight: 500; font-size: 13px;'>{recipe.category} • ${recipe.price:.2f}</p>
-                    {image_html}
-                    <table width="100%" cellspacing="5" cellpadding="0" style="margin: 10px 0;">
-                        <tr>
-                            <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>
-                                <div style='color: #f5a97f; font-size: 18px; font-weight: bold; text-align: left;'>{recipe.time_minutes}</div>
-                                <div style='color: #a5adcb; font-size: 10px; text-align: left;'>MINUTES</div>
-                            </td>
-                            <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>
-                                <div style='color: #f5a97f; font-size: 18px; font-weight: bold; text-align: left;'>{recipe.calories}</div>
-                                <div style='color: #a5adcb; font-size: 10px; text-align: left;'>CALORIES</div>
-                            </td>
-                            <td width="33%" style='background: #24273a; padding: 10px; border-radius: 8px; border: 1px solid #363a4f;'>
-                                <div style='color: #f5a97f; font-size: 18px; font-weight: bold; text-align: left;'>{len(recipe.ingredients)}</div>
-                                <div style='color: #a5adcb; font-size: 10px; text-align: left;'>INGREDIENTS</div>
-                            </td>
-                        </tr>
-                    </table>
+            <div style='font-family: "Segoe UI", sans-serif; background: #1e2030; border-radius: 12px; padding: 15px; color: #cad3f5;'>
+                
+                <table width="100%" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <!-- LEFT COLUMN: IMAGE -->
+                        <td width="40%" valign="top" style="padding-right: 15px;">
+                            {f"<img src='{img_src}' width='280' style='border-radius: 12px;'>" if img_src else "<div style='background: #24273a; color: #494d64; padding: 40px; border-radius: 12px; text-align: center;'>No Photo</div>"}
+                        </td>
 
-                    <div style='margin-bottom: 10px;'>
-                        <h3 style='color: #f5bde6; border-bottom: 2px solid #363a4f; display: inline-block; padding-bottom: 2px; font-size: 13px; margin: 0;'>Required Ingredients</h3>
-                        <p style='color: #cad3f5; line-height: 1.4; font-size: 12px; margin-top: 5px;'>{", ".join(recipe.ingredients)}</p>
-                    </div>
-                    <div>
-                        <h3 style='color: #f5bde6; border-bottom: 2px solid #363a4f; display: inline-block; padding-bottom: 2px; font-size: 13px; margin: 0;'>How to Cook</h3>
-                        <p style='color: #cad3f5; line-height: 1.4; font-size: 12px; margin-top: 5px;'>{", ".join(recipe.steps)}</p>
-                    </div>
-                </div>
+                        <!-- RIGHT COLUMN: DETAILS -->
+                        <td width="60%" valign="top">
+                            
+                            <!-- Header: Name & Difficulty -->
+                            <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 5px;">
+                                <tr>
+                                    <td align="left">
+                                        <h1 style='color: #8aadf4; margin: 0; font-size: 24px; font-weight: 800;'>{recipe.name}</h1>
+                                    </td>
+                                    <td align="right">
+                                        <span style='background: {diff_color}; color: #1e2030; padding: 4px 12px; border-radius: 14px; font-weight: bold; font-size: 11px;'>{recipe.difficulty.upper()}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style='color: #a5adcb; margin: 0 0 15px 0; font-weight: 600; font-size: 14px;'>{recipe.category} • <span style="color: #a6da95;">${recipe.price:.2f}</span></p>
+
+                            <!-- Stat Boxes -->
+                            <table width="100%" cellspacing="5" cellpadding="0" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td width="33%" style='background: #24273a; padding: 8px; border-radius: 8px; text-align: center;'>
+                                        <div style='color: #f5a97f; font-size: 16px; font-weight: bold;'>{recipe.time_minutes}</div>
+                                        <div style='color: #6e738d; font-size: 9px; font-weight: bold;'>MINS</div>
+                                    </td>
+                                    <td width="33%" style='background: #24273a; padding: 8px; border-radius: 8px; text-align: center;'>
+                                        <div style='color: #f5a97f; font-size: 16px; font-weight: bold;'>{recipe.calories}</div>
+                                        <div style='color: #6e738d; font-size: 9px; font-weight: bold;'>KCAL</div>
+                                    </td>
+                                    <td width="33%" style='background: #24273a; padding: 8px; border-radius: 8px; text-align: center;'>
+                                        <div style='color: #f5a97f; font-size: 16px; font-weight: bold;'>{len(recipe.ingredients)}</div>
+                                        <div style='color: #6e738d; font-size: 9px; font-weight: bold;'>INGR</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Ingredients -->
+                            <div style='margin-bottom: 15px;'>
+                                <h3 style='color: #b7bdf8; font-size: 14px; margin: 0 0 5px 0;'>Required Ingredients</h3>
+                                <p style='color: #cad3f5; line-height: 1.4; font-size: 12px; margin: 0;'>{", ".join(recipe.ingredients)}</p>
+                            </div>
+
+                            <!-- Steps -->
+                            <div>
+                                <h3 style='color: #b7bdf8; font-size: 14px; margin: 0 0 5px 0;'>Preparation</h3>
+                                <p style='color: #cad3f5; line-height: 1.4; font-size: 12px; margin: 0;'>{", ".join(recipe.steps)}</p>
+                            </div>
+
+                        </td>
+                    </tr>
+                </table>
+            </div>
             """
             self.detail_text.setHtml(details)
 
